@@ -9,5 +9,5 @@ SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
-set(SOURCE_FILES main.cpp main.h src/tgaimage.cpp src/draw_tools.h src/draw_tools.cpp src/3d_model.cpp src/line_model.cpp)
+set(SOURCE_FILES main.cpp main.h src/tgaimage.cpp src/draw_tools.h src/draw_tools.cpp src/3d_model.cpp src/geometric_models.cpp)
 add_executable(Renderer ${SOURCE_FILES})

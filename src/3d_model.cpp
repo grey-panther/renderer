@@ -1,22 +1,10 @@
 #include <array>
-#include <string>
 #include <vector>
 #include <fstream>
-#include <iostream>
 #include <sstream>
+#include "geometric_models.cpp"
 
 using namespace std;
-
-struct Point {
-    double x, y, z;
-
-    Point(double x, double y, double z)
-    {
-        this->x = x;
-        this->y = y;
-        this->z = z;
-    }
-};
 
 class ObjFormatModel {
 public:
