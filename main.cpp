@@ -37,17 +37,34 @@ void drawModelFaces(TGAImage &image, ObjFormatModel model) {
     vector<Point> vertexes = model.getVertexes();
     vector<array<int, ObjFormatModel::FACE_VERTEXES_COUNT>> faces = model.getFaces();
 
-    int vertexesCount = (int) vertexes.size();
     int facesCount = (int) faces.size();
 
-    // Нарисовать все рёбра модели (каждое ребро, разделяемое 2мя гранями, рисуется дважды)
+    Point lightVector(0, 0, 1);
+
     for (int faceIndex = 0; faceIndex < facesCount; faceIndex++) {
         array<int, ObjFormatModel::FACE_VERTEXES_COUNT> currentFace = faces[faceIndex];
 
-        Point p0 = vertexes[currentFace[0]].mult(halfImageSize).add(halfImageSize);
-        Point p1 = vertexes[currentFace[1]].mult(halfImageSize).add(halfImageSize);
-        Point p2 = vertexes[currentFace[2]].mult(halfImageSize).add(halfImageSize);
-        drawTriangle(p0, p1, p2, image, WHITE_COLOR);
+        Point vertex0 = vertexes[currentFace[0]];
+        Point vertex1 = vertexes[currentFace[1]];
+        Point vertex2 = vertexes[currentFace[2]];
+
+        // Вычислить цвет
+        Point vector0 = vertex1.deduct(vertex0);
+        Point vector1 = vertex2.deduct(vertex0);
+        Point faceNormalVector = Point::crossMultiply(vector0, vector1).normalize();
+        double colorIntensity = Point::dotMultiply(faceNormalVector, lightVector);
+        if (colorIntensity < 0) {
+            continue;   // Отсечение невидимых граней
+        }
+        unsigned char colorPart = (unsigned char) (255 * colorIntensity);
+        TGAColor color = TGAColor(colorPart, colorPart, colorPart, 255);
+
+        // Преобразовать координаты, чтобы растянуть рендер модели на всё изображение
+        Point p0 = vertex0.mult(halfImageSize).add(halfImageSize);
+        Point p1 = vertex1.mult(halfImageSize).add(halfImageSize);
+        Point p2 = vertex2.mult(halfImageSize).add(halfImageSize);
+
+        drawTriangle(p0, p1, p2, image, color);
     }
 }
 

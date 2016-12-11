@@ -2,7 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include "geometric_models.cpp"
+#include "Point.cpp"
 
 using namespace std;
 
