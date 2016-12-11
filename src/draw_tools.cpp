@@ -86,7 +86,7 @@ public:
     }
 
     void update() {
-        if (_currentX > _maxX) {
+        if (_currentX > _maxX || _dx <= 0) {
             return;
         }
 
@@ -108,10 +108,12 @@ void sortByX(array<Point, 3> &points) {
         int minPointIndex = i;
 
         for (int j = i + 1; j < pointsCount; j++) {
-            if (points[j].x < points[i].x) {
+            if (points[j].x < points[minPointIndex].x) {
                 minPointIndex = j;
             }
+        }
 
+        if (minPointIndex != i) {
             Point buffPoint = points[i];
             points[i] = points[minPointIndex];
             points[minPointIndex] = buffPoint;
@@ -137,11 +139,11 @@ void drawTriangle(Point p1, Point p2, Point p3, TGAImage &image, TGAColor color)
     for (int x = x0; x <= x2; x++) {
 
         if (x < x1) {
-            drawLine(commonLineIterator.getX(), commonLineIterator.getY(), leftLineIterator.getX(), leftLineIterator.getY(), image, color);
+            drawLine(x, commonLineIterator.getY(), x, leftLineIterator.getY(), image, color);
             leftLineIterator.update();
         }
         else {
-            drawLine(commonLineIterator.getX(), commonLineIterator.getY(), rightLineIterator.getX(), rightLineIterator.getY(), image, color);
+            drawLine(x, commonLineIterator.getY(), x, rightLineIterator.getY(), image, color);
             rightLineIterator.update();
         }
 
