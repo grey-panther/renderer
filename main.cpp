@@ -40,6 +40,11 @@ void drawModelFaces(TGAImage &image, ObjFormatModel model) {
     int facesCount = (int) faces.size();
 
     Point lightVector(0, 0, 1);
+    int pixelsCount = image.get_width() * image.get_height();
+    int *zBuffer = new int[pixelsCount];
+    for (int pixelIndex = 0; pixelIndex < pixelsCount; pixelIndex++) {
+        zBuffer[pixelIndex] = INT_MIN;
+    }
 
     for (int faceIndex = 0; faceIndex < facesCount; faceIndex++) {
         array<int, ObjFormatModel::FACE_VERTEXES_COUNT> currentFace = faces[faceIndex];
@@ -64,8 +69,10 @@ void drawModelFaces(TGAImage &image, ObjFormatModel model) {
         Point p1 = vertex1.mult(halfImageSize).add(halfImageSize);
         Point p2 = vertex2.mult(halfImageSize).add(halfImageSize);
 
-        drawTriangle(p0, p1, p2, image, color);
+        drawTriangle(p0, p1, p2, zBuffer, image, color);
     }
+
+    delete[](zBuffer);
 }
 
 void drawModelEdges(TGAImage &image, ObjFormatModel model) {
