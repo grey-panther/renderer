@@ -35,7 +35,7 @@ int main() {
 void drawModelFaces(TGAImage &image, ObjFormatModel model) {
     int halfImageSize = image.get_width() / 2;
     vector<Point> vertexes = model.getVertexes();
-    vector<array<int, ObjFormatModel::FACE_VERTEXES_COUNT>> faces = model.getFaces();
+    vector<ModelFace> faces = model.getFaces();
 
     int facesCount = (int) faces.size();
 
@@ -47,11 +47,11 @@ void drawModelFaces(TGAImage &image, ObjFormatModel model) {
     }
 
     for (int faceIndex = 0; faceIndex < facesCount; faceIndex++) {
-        array<int, ObjFormatModel::FACE_VERTEXES_COUNT> currentFace = faces[faceIndex];
+        array<int, ModelFace::FACE_VERTEXES_COUNT> coordVertexIndexes = faces[faceIndex].getCoordVertexIndexes();
 
-        Point vertex0 = vertexes[currentFace[0]];
-        Point vertex1 = vertexes[currentFace[1]];
-        Point vertex2 = vertexes[currentFace[2]];
+        Point vertex0 = vertexes[coordVertexIndexes[0]];
+        Point vertex1 = vertexes[coordVertexIndexes[1]];
+        Point vertex2 = vertexes[coordVertexIndexes[2]];
 
         // Вычислить цвет
         Point vector0 = vertex1.deduct(vertex0);
@@ -78,7 +78,7 @@ void drawModelFaces(TGAImage &image, ObjFormatModel model) {
 void drawModelEdges(TGAImage &image, ObjFormatModel model) {
     int halfImageSize = image.get_width() / 2;
     vector<Point> vertexes = model.getVertexes();
-    vector<array<int, ObjFormatModel::FACE_VERTEXES_COUNT>> faces = model.getFaces();
+    vector<ModelFace> faces = model.getFaces();
 
     int vertexesCount = (int) vertexes.size();
     int facesCount = (int) faces.size();
@@ -87,18 +87,18 @@ void drawModelEdges(TGAImage &image, ObjFormatModel model) {
 
     // Нарисовать все рёбра модели (каждое ребро, разделяемое 2мя гранями, рисуется дважды)
     for (int faceIndex = 0; faceIndex < facesCount; faceIndex++) {
-        array<int, ObjFormatModel::FACE_VERTEXES_COUNT> currentFace = faces[faceIndex];
+        array<int, ModelFace::FACE_VERTEXES_COUNT> coordVertexIndexes = faces[faceIndex].getCoordVertexIndexes();
 
-        for (int faceVertexIndex = 0; faceVertexIndex < ObjFormatModel::FACE_VERTEXES_COUNT; faceVertexIndex++) {
-            int currentVertexGlobalIndex = currentFace[faceVertexIndex];
+        for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
+            int currentVertexGlobalIndex = coordVertexIndexes[i];
             Point currentVertex = vertexes[currentVertexGlobalIndex];
 
-            int nextFaceVertexIndex = faceVertexIndex + 1;
-            if (nextFaceVertexIndex >= ObjFormatModel::FACE_VERTEXES_COUNT) {
+            int nextCoordVertexIndex = i + 1;
+            if (nextCoordVertexIndex >= ModelFace::FACE_VERTEXES_COUNT) {
                 // Последняя вершина имеет ребро с первой вершиной
-                nextFaceVertexIndex = 0;
+                nextCoordVertexIndex = 0;
             }
-            int nextVertexGlobalIndex = currentFace[nextFaceVertexIndex];
+            int nextVertexGlobalIndex = coordVertexIndexes[nextCoordVertexIndex];
             Point nextVertex = vertexes[nextVertexGlobalIndex];
 
             int x0 = (int) round(currentVertex.x * halfImageSize) + halfImageSize;

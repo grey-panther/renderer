@@ -3,29 +3,35 @@
 #include <fstream>
 #include <sstream>
 #include "Point.cpp"
+#include "ModelFace.cpp"
 
 using namespace std;
 
 class ObjFormatModel {
-public:
-    static const int FACE_VERTEXES_COUNT = 3;
 private:
     static const char SPACE_DELIMITER = ' ';
     static const char SLASH_DELIMITER = '/';
     static constexpr const char* VERTEX_LABEL = "v";
+    static constexpr const char* TEXTURE_VERTEX_LABEL = "vt";
     static constexpr const char* FACE_LABEL = "f";
     static const int VERTEX_DEFINITION_ELEM_COUNT = 4;
+    static const int TEXTURE_VERTEX_DEFINITION_ELEM_COUNT = 5;
     static const int FACE_DEFINITION_ELEM_COUNT = 4;
 
-    vector<Point> _vertexes;
-    vector<array<int, FACE_VERTEXES_COUNT>> _faces;
+    vector<Point> _coordVertexes;
+    vector<Point> _textureVertexes;
+    vector<ModelFace> _faces;
 
 public:
-    vector<Point> getVertexes() {
-        return _vertexes;
+    vector<Point> getCoordVertexes() {
+        return _coordVertexes;
     }
 
-    vector<array<int, FACE_VERTEXES_COUNT>> getFaces() {
+    vector<Point> getTextureVertexes() {
+        return _textureVertexes;
+    }
+
+    vector<ModelFace> getFaces() {
         return _faces;
     };
 
@@ -47,23 +53,33 @@ private:
             vector<string> elements = splitString(inputString, SPACE_DELIMITER);
             int size = (int) elements.size();
 
-            // Инициализировать вершины
+            // Инициализировать координатные вершины
             if ((size == VERTEX_DEFINITION_ELEM_COUNT) && elements[0] == VERTEX_LABEL) {
                 Point vertex(stod(elements[1]), stod(elements[2]), stod(elements[3]));
-                _vertexes.push_back(vertex);
+                _coordVertexes.push_back(vertex);
+            }
+
+            // Инициализировать текстурные вершины
+            if ((size == TEXTURE_VERTEX_DEFINITION_ELEM_COUNT) && (elements[0] == TEXTURE_VERTEX_LABEL)) {
+                Point vertex(stod(elements[2]), stod(elements[3]), 0);
+                _textureVertexes.push_back(vertex);
             }
 
             // Инициализировать грани
             if ((size == FACE_DEFINITION_ELEM_COUNT) && elements[0] == FACE_LABEL) {
-                array<int, FACE_VERTEXES_COUNT> faceVertexIndexes;
-                for (int i = 0; i < FACE_VERTEXES_COUNT; i++) {
+                array<int, ModelFace::FACE_VERTEXES_COUNT> coordVertexIndexes;
+                array<int, ModelFace::FACE_VERTEXES_COUNT> textureVertexIndexes;
+
+                for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
                     vector<string> vertexInfo = splitString(elements[i + 1], SLASH_DELIMITER);
+
                     // Внимание! В стандарте формата описано, что индексы мб отрицательными (-1 - индекс последней вершины)
-                    int vertexIndex = stoi(vertexInfo[0]) - 1;
-                    faceVertexIndexes[i] = vertexIndex;
+                    coordVertexIndexes[i] = stoi(vertexInfo[0]) - 1;
+                    textureVertexIndexes[i] = stoi(vertexInfo[1]) - 1;
                 }
 
-                _faces.push_back(faceVertexIndexes);
+                ModelFace face(coordVertexIndexes, textureVertexIndexes);
+                _faces.push_back(face);
             }
         }
 
