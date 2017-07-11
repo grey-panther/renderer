@@ -9,5 +9,6 @@ SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
-set(SOURCE_FILES main.cpp src/tgaimage.cpp src/draw_tools.hpp src/draw_tools.cpp src/ObjFormatModel.cpp src/Point.cpp src/ModelFace.cpp)
+include_directories(libs src)
+set(SOURCE_FILES main.cpp libs/tgaimage.cpp src/DrawTools.hpp src/DrawTools.cpp src/ObjFormatModel.cpp src/Point.cpp src/ModelFace.cpp)
 add_executable(Renderer ${SOURCE_FILES})

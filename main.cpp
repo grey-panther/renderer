@@ -1,8 +1,6 @@
-#include "src/tgaimage.h"
-#include "src/draw_tools.hpp"
-#include "src/ObjFormatModel.hpp"
+#include "DrawTools.hpp"
+#include "ObjFormatModel.hpp"
 
-#include <math.h>
 #include <iostream>
 
 const TGAColor WHITE_COLOR = TGAColor(255, 255, 255, 255);
