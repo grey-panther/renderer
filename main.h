@@ -1,5 +1,0 @@
-#ifndef RENDERER_MAIN_H
-#define RENDERER_MAIN_H
-
-
-#endif //RENDERER_MAIN_H

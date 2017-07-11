@@ -1,7 +1,7 @@
 #include <array>
 #include <math.h>
 #include "tgaimage.h"
-#include "draw_tools.h"
+#include "draw_tools.hpp"
 
 using namespace std;
 
