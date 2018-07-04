@@ -20,11 +20,11 @@ public:
 		_textureVertexIndexes = textureVertexIndexes;
 	}
 
-	array<int, ModelFace::FACE_VERTEXES_COUNT> getCoordVertexIndexes() {
+	const array<int, ModelFace::FACE_VERTEXES_COUNT>& getCoordVertexIndexes() const {
 		return _coordVertexIndexes;
 	}
 
-	array<int, ModelFace::FACE_VERTEXES_COUNT> getTextureVertexIndexes() {
+	const array<int, ModelFace::FACE_VERTEXES_COUNT>& getTextureVertexIndexes() const {
 		return _textureVertexIndexes;
 	};
 };

@@ -1,7 +1,7 @@
 #ifndef OBJFORMATMODEL_HPP
 #define OBJFORMATMODEL_HPP
 
-#include "Point.cpp"
+#include "Point.hpp"
 #include "ModelFace.cpp"
 
 #include <vector>
