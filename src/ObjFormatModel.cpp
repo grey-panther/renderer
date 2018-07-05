@@ -16,20 +16,20 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath) {
 
 		// Инициализировать координатные вершины
 		if ((size == VERTEX_DEFINITION_ELEM_COUNT) && elements[0] == VERTEX_LABEL) {
-			Point vertex(stod(elements[1]), stod(elements[2]), stod(elements[3]));
+			Vec3f vertex(stof(elements[1]), stof(elements[2]), stof(elements[3]));
 			_coordVertexes.push_back(vertex);
 		}
 
 		// Инициализировать текстурные вершины
 		if ((size == TEXTURE_VERTEX_DEFINITION_ELEM_COUNT) && (elements[0] == TEXTURE_VERTEX_LABEL)) {
-			Point vertex(stod(elements[2]), stod(elements[3]), 0);
+			Vec3f vertex(stof(elements[2]), stof(elements[3]), 0);
 			_textureVertexes.push_back(vertex);
 		}
 
 		// Инициализировать грани
 		if ((size == FACE_DEFINITION_ELEM_COUNT) && elements[0] == FACE_LABEL) {
-			array<int, ModelFace::FACE_VERTEXES_COUNT> coordVertexIndexes;
-			array<int, ModelFace::FACE_VERTEXES_COUNT> textureVertexIndexes;
+			std::array<int, ModelFace::FACE_VERTEXES_COUNT> coordVertexIndexes;
+			std::array<int, ModelFace::FACE_VERTEXES_COUNT> textureVertexIndexes;
 
 			for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
 				std::vector<std::string> vertexInfo = splitString(elements[i + 1], '/');

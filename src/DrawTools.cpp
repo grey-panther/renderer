@@ -134,7 +134,7 @@ public:
 };
 
 
-void sortByX(std::array<Point, 3>& points)
+void sortByX(std::array<Vec3f, 3>& points)
 {
 	// Отсортировать точки по x координате
 	int pointsCount = 3;
@@ -149,7 +149,7 @@ void sortByX(std::array<Point, 3>& points)
 		}
 
 		if (minPointIndex != i) {
-			Point buffPoint = points[i];
+			Vec3f buffPoint = points[i];
 			points[i] = points[minPointIndex];
 			points[minPointIndex] = buffPoint;
 		}
@@ -157,10 +157,10 @@ void sortByX(std::array<Point, 3>& points)
 }
 
 
-void drawTriangle(const Point p1, const Point p2, const Point p3, std::vector<int>& zBuffer, TGAImage& image,
-				  const TGAColor color)
+void drawTriangle(const Vec3f& p1, const Vec3f& p2, const Vec3f& p3, std::vector<int>& zBuffer, TGAImage& image,
+				  const TGAColor& color)
 {
-	std::array<Point, 3> points = {p1, p2, p3};
+	std::array<Vec3f, 3> points = {p1, p2, p3};
 	sortByX(points);
 
 	int x0 = (int) points[0].x;
@@ -260,16 +260,21 @@ void drawLineWithDepthMask(int x0, int y0, int z0, int x1, int y1, int z1, std::
 }
 
 
-void drawTriangle(const Vec3i& p1, const Vec3i& p2, const Vec3i& p3, std::vector<int>& zBuffer, TGAImage& image,
-				  const TGAColor& color)
+void drawTriangle(
+		std::array<VertexData, 3> vertexes,
+		std::vector<int>& zBuffer,
+		TGAImage& image,
+		const TGAColor& color
+)
 {
 	// Отсортировать полученные точки в порядке возрастания x.
-	std::array<Vec3i, 3> points = {p1, p2, p3};
-	std::sort(points.begin(), points.end(), [](const Vec3i& v1, const Vec3i& v2) { return v1.x < v2.x; });
+	std::sort(vertexes.begin(), vertexes.end(), [](const VertexData& v1, const VertexData& v2) {
+		return v1.coords.x < v2.coords.x;
+	});
 
-	const Vec3i& v1 = points[0];
-	const Vec3i& v2 = points[1];
-	const Vec3i& v3 = points[2];
+	const Vec3i& v1 = vertexes[0].coords;
+	const Vec3i& v2 = vertexes[1].coords;
+	const Vec3i& v3 = vertexes[2].coords;
 
 	const Vec3i v1v2 = v2 - v1;
 	const Vec3i v2v3 = v3 - v2;

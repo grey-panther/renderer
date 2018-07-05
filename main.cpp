@@ -32,9 +32,9 @@ int main()
 //	drawTriangle(p1, p2, p3, {}, image, WHITE_COLOR);
 //	drawTriangle(p3, p1, Vec3i(210, 80), {}, image, GREEN_COLOR);
 
-//	Point p1(180, 50, 0);
-//	Point p2(150, 1, 0);
-//	Point p3(70, 180, 0);
+//	Vec3f p1(180, 50, 0);
+//	Vec3f p2(150, 1, 0);
+//	Vec3f p3(70, 180, 0);
 //	drawTriangle(p1, p2, p3, image, WHITE_COLOR);
 
 	drawModelFaces(image, model);
@@ -51,10 +51,10 @@ int main()
 void drawModelFaces(TGAImage& image, const ObjFormatModel& model)
 {
 	const int halfImageSize = image.get_width() / 2;
-	const vector<Point>& vertexes = model.getVertexes();
-	const vector<ModelFace>& faces = model.getFaces();
+	const std::vector<Vec3f>& vertexes = model.getVertexes();
+	const std::vector<ModelFace>& faces = model.getFaces();
 
-	Point lightVector(0, 0, 1);
+	Vec3f lightVector(0, 0, 1);
 
 	// Инициализировать z-buffer
 	const size_t pixelsCount = static_cast<size_t>(image.get_width() * image.get_height());
@@ -63,16 +63,16 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model)
 	for (const ModelFace& face : faces) {
 		const array<int, ModelFace::FACE_VERTEXES_COUNT>& coordVertexIndexes = face.getCoordVertexIndexes();
 
-		Point vertex0 = vertexes[coordVertexIndexes[0]];
-		Point vertex1 = vertexes[coordVertexIndexes[1]];
-		Point vertex2 = vertexes[coordVertexIndexes[2]];
+		Vec3f vertex0 = vertexes[coordVertexIndexes[0]];
+		Vec3f vertex1 = vertexes[coordVertexIndexes[1]];
+		Vec3f vertex2 = vertexes[coordVertexIndexes[2]];
 
 		// Вычислить цвет
-		const Point vector0 = Point::deduct(vertex1, vertex0);
-		const Point vector1 = Point::deduct(vertex2, vertex0);
-		const Point faceNormalVector = Point::crossMultiply(vector0, vector1).normalize();
+		const Vec3f vector0 = vertex1 - vertex0;
+		const Vec3f vector1 = vertex2 - vertex0;
+		const Vec3f faceNormalVector = Vec3f::crossMultiply(vector0, vector1).normalize();
 
-		const double colorIntensity = Point::dotMultiply(faceNormalVector, lightVector);
+		const float colorIntensity = Vec3f::dotMultiply(faceNormalVector, lightVector);
 		if (colorIntensity < 0) {
 			continue;   // Отсечение невидимых граней
 		}
@@ -80,12 +80,23 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model)
 		const TGAColor color = TGAColor(colorPart, colorPart, colorPart, 255);
 
 		// Преобразовать координаты, чтобы растянуть рендер модели на всё изображение
-		vertex0.mult(halfImageSize).add(halfImageSize);
-		vertex1.mult(halfImageSize).add(halfImageSize);
-		vertex2.mult(halfImageSize).add(halfImageSize);
+		(vertex0 *= halfImageSize) += halfImageSize;
+		(vertex1 *= halfImageSize) += halfImageSize;
+		(vertex2 *= halfImageSize) += halfImageSize;
+
+		const std::array<int, ModelFace::FACE_VERTEXES_COUNT> tvIndexes = face.getTextureVertexIndexes();
+		const std::vector<Vec3f>& textureVertexes = model.getTextureVertexes();
+		const Vec3f& tv0 = textureVertexes[tvIndexes[0]];
+		const Vec3f& tv1 = textureVertexes[tvIndexes[1]];
+		const Vec3f& tv2 = textureVertexes[tvIndexes[2]];
 
 //		drawTriangle(vertex0, vertex1, vertex2, zBuffer, image, color);
-		drawTriangle(Vec3i(vertex0), Vec3i(vertex1), Vec3i(vertex2), zBuffer, image, color);
+		drawTriangle(
+				{VertexData(vertex0.round(), tv0), VertexData(vertex1.round(), tv1), VertexData(vertex2.round(), tv2)},
+				zBuffer,
+				image,
+				color
+		);
 	}
 }
 
@@ -93,8 +104,8 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model)
 void drawModelEdges(TGAImage& image, const ObjFormatModel& model)
 {
 	int halfImageSize = image.get_width() / 2;
-	vector<Point> vertexes = model.getVertexes();
-	vector<ModelFace> faces = model.getFaces();
+	const std::vector<Vec3f>& vertexes = model.getVertexes();
+	const std::vector<ModelFace>& faces = model.getFaces();
 
 	int vertexesCount = (int) vertexes.size();
 	int facesCount = (int) faces.size();
@@ -107,7 +118,7 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model)
 
 		for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
 			int currentVertexGlobalIndex = coordVertexIndexes[i];
-			Point currentVertex = vertexes[currentVertexGlobalIndex];
+			const Vec3f& currentVertex = vertexes[currentVertexGlobalIndex];
 
 			int nextCoordVertexIndex = i + 1;
 			if (nextCoordVertexIndex >= ModelFace::FACE_VERTEXES_COUNT) {
@@ -115,7 +126,7 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model)
 				nextCoordVertexIndex = 0;
 			}
 			int nextVertexGlobalIndex = coordVertexIndexes[nextCoordVertexIndex];
-			Point nextVertex = vertexes[nextVertexGlobalIndex];
+			const Vec3f& nextVertex = vertexes[nextVertexGlobalIndex];
 
 			int x0 = (int) round(currentVertex.x * halfImageSize) + halfImageSize;
 			int y0 = (int) round(currentVertex.y * halfImageSize) + halfImageSize;

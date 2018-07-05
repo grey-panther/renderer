@@ -1,7 +1,7 @@
 #ifndef OBJFORMATMODEL_HPP
 #define OBJFORMATMODEL_HPP
 
-#include "Point.hpp"
+#include "Vec3f.hpp"
 #include "ModelFace.cpp"
 
 #include <vector>
@@ -18,8 +18,8 @@ private:
 	static const int TEXTURE_VERTEX_DEFINITION_ELEM_COUNT = 5;
 	static const int FACE_DEFINITION_ELEM_COUNT = 4;
 
-	std::vector<Point> _coordVertexes;
-	std::vector<Point> _textureVertexes;
+	std::vector<Vec3f> _coordVertexes;
+	std::vector<Vec3f> _textureVertexes;
 	std::vector<ModelFace> _faces;
 
 public:
@@ -31,11 +31,11 @@ public:
 
 	}
 
-	const std::vector<Point>& getVertexes() const {
+	const std::vector<Vec3f>& getVertexes() const {
 		return _coordVertexes;
 	}
 
-	const std::vector<Point>& getTextureVertexes() const {
+	const std::vector<Vec3f>& getTextureVertexes() const {
 		return _textureVertexes;
 	}
 
