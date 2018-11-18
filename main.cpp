@@ -15,13 +15,17 @@ const int IMAGE_SIZE = 1800;
 
 void drawModelEdges(TGAImage& image, const ObjFormatModel& model);
 
-void drawModelFaces(TGAImage& image, const ObjFormatModel& model);
+void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture);
 
 
 int main()
 {
-	ObjFormatModel model("../assets/african_head.obj");
+	const ObjFormatModel model("../assets/african_head.obj");
 	TGAImage image(IMAGE_SIZE, IMAGE_SIZE, TGAImage::RGB);
+
+	TGAImage texture(1024, 1024, TGAImage::RGB);
+	texture.read_tga_file("../assets/african_head_diffuse.tga");
+	texture.flip_vertically();
 
 //	const Vec3i p1(180, 50);
 //	const Vec3i p2(150, 1);
@@ -37,7 +41,7 @@ int main()
 //	Vec3f p3(70, 180, 0);
 //	drawTriangle(p1, p2, p3, image, WHITE_COLOR);
 
-	drawModelFaces(image, model);
+	drawModelFaces(image, model, texture);
 
 //	drawModelEdges(image, model);
 
@@ -48,7 +52,7 @@ int main()
 }
 
 
-void drawModelFaces(TGAImage& image, const ObjFormatModel& model)
+void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture)
 {
 	const int halfImageSize = image.get_width() / 2;
 	const std::vector<Vec3f>& vertexes = model.getVertexes();
@@ -76,8 +80,8 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model)
 		if (colorIntensity < 0) {
 			continue;   // Отсечение невидимых граней
 		}
-		const unsigned char colorPart = static_cast<unsigned char>(255 * colorIntensity);
-		const TGAColor color = TGAColor(colorPart, colorPart, colorPart, 255);
+//		const unsigned char colorPart = static_cast<unsigned char>(255 * colorIntensity);
+//		const TGAColor color = TGAColor(colorPart, colorPart, colorPart, 255);
 
 		// Преобразовать координаты, чтобы растянуть рендер модели на всё изображение
 		(vertex0 *= halfImageSize) += halfImageSize;
@@ -95,7 +99,8 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model)
 				{VertexData(vertex0.round(), tv0), VertexData(vertex1.round(), tv1), VertexData(vertex2.round(), tv2)},
 				zBuffer,
 				image,
-				color
+				colorIntensity,
+				texture
 		);
 	}
 }

@@ -41,6 +41,7 @@ struct VertexData
 			, textureCoords(textureCoords)
 	{}
 
+
 	Vec3i coords;
 	Vec3f textureCoords;
 };
@@ -49,7 +50,8 @@ void drawTriangle(
 		std::array<VertexData, 3> vertexes,
 		std::vector<int>& zBuffer,
 		TGAImage& image,
-		const TGAColor& color
+		float colorIntensity,
+		const TGAImage& texture
 );
 
 #endif

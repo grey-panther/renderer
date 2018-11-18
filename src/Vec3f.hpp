@@ -11,15 +11,15 @@ public:
 	float x, y, z;
 
 public:
-	Vec3f(float x, float y, float z)
+	explicit Vec3f(float x = 0, float y = 0, float z = 0)
 			: x(x)
 			, y(y)
 			, z(z)
 	{}
 
-	Vec3f& operator*=(int multiplier);
+	Vec3f& operator*=(float multiplier);
 
-	Vec3f& operator+=(int addition);
+	Vec3f& operator+=(float addition);
 
 	Vec3f& operator+=(const Vec3f& other);
 
@@ -48,5 +48,6 @@ Vec3f operator+(const Vec3f& v1, const Vec3f& v2);
 
 Vec3f operator-(const Vec3f& v1, const Vec3f& v2);
 
+Vec3f operator*(float multiplier, Vec3f v);
 
 #endif

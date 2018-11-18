@@ -2,7 +2,7 @@
 #include "Vec3i.hpp"
 
 
-Vec3f& Vec3f::operator*=(int multiplier)
+Vec3f& Vec3f::operator*=(float multiplier)
 {
 	x *= multiplier;
 	y *= multiplier;
@@ -11,7 +11,7 @@ Vec3f& Vec3f::operator*=(int multiplier)
 }
 
 
-Vec3f& Vec3f::operator+=(int addition)
+Vec3f& Vec3f::operator+=(float addition)
 {
 	x += addition;
 	y += addition;
@@ -101,4 +101,10 @@ Vec3f operator-(const Vec3f& v1, const Vec3f& v2)
 	Vec3f result = v1;
 	result -= v2;
 	return result;
+}
+
+
+Vec3f operator*(float multiplier, Vec3f v)
+{
+	return v *= multiplier;
 }

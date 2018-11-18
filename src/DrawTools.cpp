@@ -264,7 +264,8 @@ void drawTriangle(
 		std::array<VertexData, 3> vertexes,
 		std::vector<int>& zBuffer,
 		TGAImage& image,
-		const TGAColor& color
+		float colorIntensity,
+		const TGAImage& texture
 )
 {
 	// Отсортировать полученные точки в порядке возрастания x.
@@ -280,6 +281,10 @@ void drawTriangle(
 	const Vec3i v2v3 = v3 - v2;
 	const Vec3i v1v3 = v3 - v1;
 
+	const Vec3f& vt1 = vertexes[0].textureCoords;
+	const Vec3f& vt2 = vertexes[1].textureCoords;
+	const Vec3f& vt3 = vertexes[2].textureCoords;
+
 	float tCommon = 1.0f / v1v3.x;
 	bool isLeft = true;
 
@@ -292,35 +297,61 @@ void drawTriangle(
 			// Теперь рисовать правую часть треугольника.
 			isLeft = false;
 		}
+		const float commonEdgeProgress = (x - v1.x) * tCommon;
 		// Определить точку на векторе v1v3 (общей стороне треугольника), которая соответствует текущему x.
-		Vec3i vCommon = v1 + ((x - v1.x) * tCommon) * v1v3;
+		const Vec3i vCommon = v1 + commonEdgeProgress * v1v3;
+		const Vec3f vtCommon = vt1 + commonEdgeProgress * (vt3 - vt1);
+		VertexData drawingVertex1(
+				v1 + commonEdgeProgress * v1v3,
+				vt1 + commonEdgeProgress * (vt3 - vt1)
+		);
 
 		// Аналогично определить точку на левой (v1v2) или правой (v2v3) малой стороне треугольника.
 		Vec3i v;
+		Vec3f vt;
 		if (isLeft) {
-			const float t = 1.0f / v1v2.x;
-			v = v1 + ((x - v1.x) * t) * v1v2;
+			const float leftEdgeProgress = static_cast<float>(x - v1.x) / v1v2.x;
+			v = v1 + leftEdgeProgress * v1v2;
+			vt = vt1 + leftEdgeProgress * (vt2 - vt1);
 		}
 		else {
-			const float t = 1.0f / v2v3.x;
-			v = v2 + ((x - v2.x) * t) * v2v3;
+			const float rightEdgeProgress = static_cast<float>(x - v2.x) / v2v3.x;
+			v = v2 + rightEdgeProgress * v2v3;
+			vt = vt2 + rightEdgeProgress * (vt3 - vt2);
 		}
+		VertexData drawingVertex2(v, vt);
 
+		// Под номером 1 пусть будет вершина с меньшей Y координатой.
+		if (drawingVertex1.coords.y > drawingVertex2.coords.y) {
+			std::swap(drawingVertex1, drawingVertex2);
+		}
 		// Закрасить вертикальный отрезок от vLow.y до vHigh.y.
-		const Vec3i& vLow = (vCommon.y < v.y) ? vCommon : v;
-		const Vec3i& vHigh = (vCommon.y < v.y) ? v : vCommon;
+		const Vec3i& vLow = drawingVertex1.coords;
+		const Vec3i& vHigh = drawingVertex2.coords;
+		const Vec3f& uv1 = drawingVertex1.textureCoords;
+		const Vec3f& uv2 = drawingVertex2.textureCoords;
 		const int yDiff = vHigh.y - vLow.y;
 		const int zDiff = vHigh.z - vLow.z;
 		int pixelIndex = vLow.y * image.get_width() + x; // pixelIndex >= 0
 
 		for (int y = vLow.y; y <= vHigh.y; ++y) {
-			const float zt = static_cast<float>(y - vLow.y) / yDiff;
-			const int z = vLow.z + static_cast<int>(std::round(zt * zDiff));
+			const float t = static_cast<float>(y - vLow.y) / yDiff;
+			const int z = vLow.z + static_cast<int>(std::round(t * zDiff));
+			const Vec3f uv = uv1 + t * (uv2 - uv1);
 
 			// Проверить по zBuffer, можно ли рисовать пиксель.
 			if (z > zBuffer[pixelIndex]) {
 				zBuffer[pixelIndex] = z;
-				image.set(x, y, color);
+
+				// Взять из текстуры цвет по полученным uv координатам.
+				const int u = static_cast<int>(std::round(uv.x * texture.get_width()));
+				const int v = static_cast<int>(std::round(uv.y * texture.get_height()));
+				const TGAColor textureColor = texture.get(u, v);
+				const auto r = static_cast<unsigned char>(textureColor.r * colorIntensity);
+				const auto g = static_cast<unsigned char>(textureColor.g * colorIntensity);
+				const auto b = static_cast<unsigned char>(textureColor.b * colorIntensity);
+
+				image.set(x, y, TGAColor(r, g, b, 255));
 			}
 
 			pixelIndex += image.get_width();
