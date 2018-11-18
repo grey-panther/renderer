@@ -264,7 +264,7 @@ void drawTriangle(
 		std::array<VertexData, 3> vertexes,
 		std::vector<int>& zBuffer,
 		TGAImage& image,
-		float colorIntensity,
+		const Vec3f& lightVector,
 		const TGAImage& texture
 )
 {
@@ -289,6 +289,14 @@ void drawTriangle(
 	const Vec3f vt2vt3 = vt3 - vt2;
 	const Vec3f vt1vt3 = vt3 - vt1;
 
+	const Vec3f& vn1 = vertexes[0].normal;
+	const Vec3f& vn2 = vertexes[1].normal;
+	const Vec3f& vn3 = vertexes[2].normal;
+
+	const Vec3f vn1vn2 = vn2 - vn1;
+	const Vec3f vn2vn3 = vn3 - vn2;
+	const Vec3f vn1vn3 = vn3 - vn1;
+
 	// Чтобы не выполнять деление в цикле, заранее посчитать обратную величину для v1v3.x.
 	const float inverseV1V3X = 1.0f / v1v3.x;
 	bool isLeft = true;
@@ -304,27 +312,29 @@ void drawTriangle(
 		}
 		const float commonEdgeProgress = (x - v1.x) * inverseV1V3X;
 		// Определить точку на векторе v1v3 (общей стороне треугольника), которая соответствует текущему x.
-		const Vec3i vCommon = v1 + commonEdgeProgress * v1v3;
-		const Vec3f vtCommon = vt1 + commonEdgeProgress * vt1vt3;
 		VertexData drawingVertex1(
 				v1 + commonEdgeProgress * v1v3,
-				vt1 + commonEdgeProgress * vt1vt3
+				vt1 + commonEdgeProgress * vt1vt3,
+				vn1 + commonEdgeProgress * vn1vn3
 		);
 
 		// Аналогично определить точку на левой (v1v2) или правой (v2v3) малой стороне треугольника.
 		Vec3i v;
 		Vec3f vt;
+		Vec3f vn;
 		if (isLeft) {
 			const float leftEdgeProgress = static_cast<float>(x - v1.x) / v1v2.x;
 			v = v1 + leftEdgeProgress * v1v2;
 			vt = vt1 + leftEdgeProgress * vt1vt2;
+			vn = vn1 + leftEdgeProgress * vn1vn2;
 		}
 		else {
 			const float rightEdgeProgress = static_cast<float>(x - v2.x) / v2v3.x;
 			v = v2 + rightEdgeProgress * v2v3;
 			vt = vt2 + rightEdgeProgress * vt2vt3;
+			vn = vn2 + rightEdgeProgress * vn2vn3;
 		}
-		VertexData drawingVertex2(v, vt);
+		VertexData drawingVertex2(v, vt, vn);
 
 		// Под номером 1 пусть будет вершина с меньшей Y координатой.
 		if (drawingVertex1.coords.y > drawingVertex2.coords.y) {
@@ -335,31 +345,46 @@ void drawTriangle(
 		const Vec3i& vHigh = drawingVertex2.coords;
 		const Vec3f& uv1 = drawingVertex1.textureCoords;
 		const Vec3f& uv2 = drawingVertex2.textureCoords;
+		const Vec3f& n1 = drawingVertex1.normal;
+		const Vec3f& n2 = drawingVertex2.normal;
 		const int yDiff = vHigh.y - vLow.y;
 		const int zDiff = vHigh.z - vLow.z;
 		int pixelIndex = vLow.y * image.get_width() + x; // pixelIndex >= 0
 
-		for (int y = vLow.y; y <= vHigh.y; ++y) {
+		for (int y = vLow.y; y <= vHigh.y; ++y, pixelIndex += image.get_width()) {
 			const float t = static_cast<float>(y - vLow.y) / yDiff;
 			const int z = vLow.z + static_cast<int>(std::round(t * zDiff));
-			const Vec3f uv = uv1 + t * (uv2 - uv1);
 
 			// Проверить по zBuffer, можно ли рисовать пиксель.
 			if (z > zBuffer[pixelIndex]) {
+
+				// Определить интенсивность цвета в данной точке треугольника.
+				const Vec3f normal = (n1 + t * (n2 - n1)); // TODO Надо нормализовывать или нет?
+				const float colorIntensity = Vec3f::dotMultiply(normal, lightVector);
+				if (colorIntensity < 0) {
+					// Отсечение невидимой точки.
+					// Невидимую точку не записывать в z буффер, а то она может оказаться самой ближней
+					// и не дать нарисовать другую точку позади себя.
+					continue;
+				}
+
 				zBuffer[pixelIndex] = z;
+
+				// Вычислить uv-координаты для данной точки треугольника.
+				const Vec3f uv = uv1 + t * (uv2 - uv1);
 
 				// Взять из текстуры цвет по полученным uv координатам.
 				const int u = static_cast<int>(std::round(uv.x * texture.get_width()));
 				const int v = static_cast<int>(std::round(uv.y * texture.get_height()));
 				const TGAColor textureColor = texture.get(u, v);
+
+				// Скорректировать цвета в зависимости от освещённости точки.
 				const auto r = static_cast<unsigned char>(textureColor.r * colorIntensity);
 				const auto g = static_cast<unsigned char>(textureColor.g * colorIntensity);
 				const auto b = static_cast<unsigned char>(textureColor.b * colorIntensity);
 
 				image.set(x, y, TGAColor(r, g, b, 255));
 			}
-
-			pixelIndex += image.get_width();
 		}
 	}
 //	for (int x = v1.x; x <= v3.x; ++x) {

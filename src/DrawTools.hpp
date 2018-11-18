@@ -36,21 +36,23 @@ void drawTriangle(
 
 struct VertexData
 {
-	VertexData(const Vec3i& coords, const Vec3f& textureCoords)
+	VertexData(const Vec3i& coords, const Vec3f& textureCoords, const Vec3f& normal)
 			: coords(coords)
 			, textureCoords(textureCoords)
+			, normal(normal)
 	{}
 
 
 	Vec3i coords;
 	Vec3f textureCoords;
+	Vec3f normal;
 };
 
 void drawTriangle(
 		std::array<VertexData, 3> vertexes,
 		std::vector<int>& zBuffer,
 		TGAImage& image,
-		float colorIntensity,
+		const Vec3f& lightVector,
 		const TGAImage& texture
 );
 

@@ -58,7 +58,7 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 	const std::vector<Vec3f>& vertexes = model.getVertexes();
 	const std::vector<ModelFace>& faces = model.getFaces();
 
-	Vec3f lightVector(0, 0, 1);
+	const Vec3f lightVector(0, 0, 1);
 
 	// Инициализировать z-buffer
 	const size_t pixelsCount = static_cast<size_t>(image.get_width() * image.get_height());
@@ -72,16 +72,6 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		Vec3f vertex1 = vertexes[coordVertexIndexes[1]];
 		Vec3f vertex2 = vertexes[coordVertexIndexes[2]];
 
-		// Вычислить интенсивность света на треугольнике, опираясь на нормаль этого треугольника.
-		const Vec3f vector0 = vertex1 - vertex0;
-		const Vec3f vector1 = vertex2 - vertex0;
-		const Vec3f faceNormalVector = Vec3f::crossMultiply(vector0, vector1).normalize();
-
-		const float colorIntensity = Vec3f::dotMultiply(faceNormalVector, lightVector);
-		if (colorIntensity < 0) {
-			continue;   // Отсечение невидимых граней
-		}
-
 		// Преобразовать координаты, чтобы растянуть рендер модели на всё изображение
 		(vertex0 *= halfImageSize) += halfImageSize;
 		(vertex1 *= halfImageSize) += halfImageSize;
@@ -94,11 +84,22 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		const Vec3f& tv1 = textureVertexes[tvIndexes[1]];
 		const Vec3f& tv2 = textureVertexes[tvIndexes[2]];
 
+		// Получить нормали к каждой из вершин.
+		const ModelFace::Indices& vnIndexes = face.getVertexNormalIndexes();
+		const std::vector<Vec3f>& vertexNormals = model.getVertexNormals();
+		const Vec3f& vn0 = vertexNormals[vnIndexes[0]];
+		const Vec3f& vn1 = vertexNormals[vnIndexes[1]];
+		const Vec3f& vn2 = vertexNormals[vnIndexes[2]];
+
 		drawTriangle(
-				{VertexData(vertex0.round(), tv0), VertexData(vertex1.round(), tv1), VertexData(vertex2.round(), tv2)},
+				{
+					VertexData(vertex0.round(), tv0, vn0),
+					VertexData(vertex1.round(), tv1, vn1),
+					VertexData(vertex2.round(), tv2, vn2),
+				},
 				zBuffer,
 				image,
-				colorIntensity,
+				lightVector,
 				texture
 		);
 	}
