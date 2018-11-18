@@ -285,7 +285,12 @@ void drawTriangle(
 	const Vec3f& vt2 = vertexes[1].textureCoords;
 	const Vec3f& vt3 = vertexes[2].textureCoords;
 
-	float tCommon = 1.0f / v1v3.x;
+	const Vec3f vt1vt2 = vt2 - vt1;
+	const Vec3f vt2vt3 = vt3 - vt2;
+	const Vec3f vt1vt3 = vt3 - vt1;
+
+	// Чтобы не выполнять деление в цикле, заранее посчитать обратную величину для v1v3.x.
+	const float inverseV1V3X = 1.0f / v1v3.x;
 	bool isLeft = true;
 
 	for (int x = v1.x; x <= v3.x; ++x) {
@@ -297,13 +302,13 @@ void drawTriangle(
 			// Теперь рисовать правую часть треугольника.
 			isLeft = false;
 		}
-		const float commonEdgeProgress = (x - v1.x) * tCommon;
+		const float commonEdgeProgress = (x - v1.x) * inverseV1V3X;
 		// Определить точку на векторе v1v3 (общей стороне треугольника), которая соответствует текущему x.
 		const Vec3i vCommon = v1 + commonEdgeProgress * v1v3;
-		const Vec3f vtCommon = vt1 + commonEdgeProgress * (vt3 - vt1);
+		const Vec3f vtCommon = vt1 + commonEdgeProgress * vt1vt3;
 		VertexData drawingVertex1(
 				v1 + commonEdgeProgress * v1v3,
-				vt1 + commonEdgeProgress * (vt3 - vt1)
+				vt1 + commonEdgeProgress * vt1vt3
 		);
 
 		// Аналогично определить точку на левой (v1v2) или правой (v2v3) малой стороне треугольника.
@@ -312,12 +317,12 @@ void drawTriangle(
 		if (isLeft) {
 			const float leftEdgeProgress = static_cast<float>(x - v1.x) / v1v2.x;
 			v = v1 + leftEdgeProgress * v1v2;
-			vt = vt1 + leftEdgeProgress * (vt2 - vt1);
+			vt = vt1 + leftEdgeProgress * vt1vt2;
 		}
 		else {
 			const float rightEdgeProgress = static_cast<float>(x - v2.x) / v2v3.x;
 			v = v2 + rightEdgeProgress * v2v3;
-			vt = vt2 + rightEdgeProgress * (vt3 - vt2);
+			vt = vt2 + rightEdgeProgress * vt2vt3;
 		}
 		VertexData drawingVertex2(v, vt);
 
