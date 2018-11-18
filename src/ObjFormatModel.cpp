@@ -26,10 +26,17 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath) {
 			_textureVertexes.push_back(vertex);
 		}
 
+		// Инициализировать нормали к вершинам
+		if ((size == VERTEX_NORMAL_DEFINITION_ELEM_COUNT) && (elements[0] == NORMAL_VERTEX_LABEL)) {
+			const Vec3f normal(stof(elements[2]), stof(elements[3]), stof(elements[4]));
+			_vertexNormals.push_back(normal);
+		}
+
 		// Инициализировать грани
 		if ((size == FACE_DEFINITION_ELEM_COUNT) && elements[0] == FACE_LABEL) {
-			std::array<int, ModelFace::FACE_VERTEXES_COUNT> coordVertexIndexes;
-			std::array<int, ModelFace::FACE_VERTEXES_COUNT> textureVertexIndexes;
+			std::array<int, ModelFace::FACE_VERTEXES_COUNT> coordVertexIndexes = {};
+			std::array<int, ModelFace::FACE_VERTEXES_COUNT> textureVertexIndexes = {};
+			std::array<int, ModelFace::FACE_VERTEXES_COUNT> vertexNormalIndexes = {};
 
 			for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
 				std::vector<std::string> vertexInfo = splitString(elements[i + 1], '/');
@@ -37,9 +44,10 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath) {
 				// Внимание! В стандарте формата описано, что индексы мб отрицательными (-1 - индекс последней вершины)
 				coordVertexIndexes[i] = stoi(vertexInfo[0]) - 1;
 				textureVertexIndexes[i] = stoi(vertexInfo[1]) - 1;
+				vertexNormalIndexes[i] = stoi(vertexInfo[2]) - 1;
 			}
 
-			ModelFace face(coordVertexIndexes, textureVertexIndexes);
+			const ModelFace face(coordVertexIndexes, textureVertexIndexes, vertexNormalIndexes);
 			_faces.push_back(face);
 		}
 	}

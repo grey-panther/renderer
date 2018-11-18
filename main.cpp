@@ -62,16 +62,17 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 
 	// Инициализировать z-buffer
 	const size_t pixelsCount = static_cast<size_t>(image.get_width() * image.get_height());
-	std::vector<int> zBuffer(pixelsCount, numeric_limits<int>::min());
+	std::vector<int> zBuffer(pixelsCount, std::numeric_limits<int>::min());
 
 	for (const ModelFace& face : faces) {
-		const array<int, ModelFace::FACE_VERTEXES_COUNT>& coordVertexIndexes = face.getCoordVertexIndexes();
+		const ModelFace::Indices& coordVertexIndexes = face.getCoordVertexIndexes();
 
+		// Нормализованные (от 0 до 1) координаты вершин треугольника.
 		Vec3f vertex0 = vertexes[coordVertexIndexes[0]];
 		Vec3f vertex1 = vertexes[coordVertexIndexes[1]];
 		Vec3f vertex2 = vertexes[coordVertexIndexes[2]];
 
-		// Вычислить цвет
+		// Вычислить интенсивность света на треугольнике, опираясь на нормаль этого треугольника.
 		const Vec3f vector0 = vertex1 - vertex0;
 		const Vec3f vector1 = vertex2 - vertex0;
 		const Vec3f faceNormalVector = Vec3f::crossMultiply(vector0, vector1).normalize();
@@ -80,21 +81,19 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		if (colorIntensity < 0) {
 			continue;   // Отсечение невидимых граней
 		}
-//		const unsigned char colorPart = static_cast<unsigned char>(255 * colorIntensity);
-//		const TGAColor color = TGAColor(colorPart, colorPart, colorPart, 255);
 
 		// Преобразовать координаты, чтобы растянуть рендер модели на всё изображение
 		(vertex0 *= halfImageSize) += halfImageSize;
 		(vertex1 *= halfImageSize) += halfImageSize;
 		(vertex2 *= halfImageSize) += halfImageSize;
 
+		// Получить нормализованные текстурные координаты.
 		const std::array<int, ModelFace::FACE_VERTEXES_COUNT> tvIndexes = face.getTextureVertexIndexes();
 		const std::vector<Vec3f>& textureVertexes = model.getTextureVertexes();
 		const Vec3f& tv0 = textureVertexes[tvIndexes[0]];
 		const Vec3f& tv1 = textureVertexes[tvIndexes[1]];
 		const Vec3f& tv2 = textureVertexes[tvIndexes[2]];
 
-//		drawTriangle(vertex0, vertex1, vertex2, zBuffer, image, color);
 		drawTriangle(
 				{VertexData(vertex0.round(), tv0), VertexData(vertex1.round(), tv1), VertexData(vertex2.round(), tv2)},
 				zBuffer,
@@ -114,12 +113,12 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model)
 
 	int vertexesCount = (int) vertexes.size();
 	int facesCount = (int) faces.size();
-	cout << "vertexes count = " << vertexesCount << endl;
-	cout << "faces count = " << facesCount << endl;
+	std::cout << "vertexes count = " << vertexesCount << std::endl;
+	std::cout << "faces count = " << facesCount << std::endl;
 
 	// Нарисовать все рёбра модели (каждое ребро, разделяемое 2мя гранями, рисуется дважды)
 	for (int faceIndex = 0; faceIndex < facesCount; faceIndex++) {
-		array<int, ModelFace::FACE_VERTEXES_COUNT> coordVertexIndexes = faces[faceIndex].getCoordVertexIndexes();
+		const ModelFace::Indices& coordVertexIndexes = faces[faceIndex].getCoordVertexIndexes();
 
 		for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
 			int currentVertexGlobalIndex = coordVertexIndexes[i];

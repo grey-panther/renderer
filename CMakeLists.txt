@@ -11,5 +11,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
 include_directories(libs src)
 # TODO Сделать рекурсивный подхват имён компилируемых файлов.
-set(SOURCE_FILES main.cpp libs/tgaimage.cpp src/DrawTools.hpp src/DrawTools.cpp src/ObjFormatModel.cpp src/Vec3f.cpp src/ModelFace.cpp src/Vec3i.cpp)
+set(SOURCE_FILES main.cpp libs/tgaimage.cpp src/DrawTools.hpp src/DrawTools.cpp src/ObjFormatModel.cpp src/Vec3f.cpp src/Vec3i.cpp)
 add_executable(Renderer ${SOURCE_FILES})
