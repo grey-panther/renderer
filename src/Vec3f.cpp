@@ -11,6 +11,15 @@ Vec3f& Vec3f::operator*=(float multiplier)
 }
 
 
+Vec3f& Vec3f::operator/=(float divider)
+{
+	x /= divider;
+	y /= divider;
+	z /= divider;
+	return *this;
+}
+
+
 Vec3f& Vec3f::operator+=(float addition)
 {
 	x += addition;
@@ -107,4 +116,12 @@ Vec3f operator-(const Vec3f& v1, const Vec3f& v2)
 Vec3f operator*(float multiplier, Vec3f v)
 {
 	return v *= multiplier;
+}
+
+
+Vec3f operator/(const Vec3f& v, float divider)
+{
+	Vec3f result = v;
+	result /= divider;
+	return result;
 }

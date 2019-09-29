@@ -19,6 +19,8 @@ public:
 
 	Vec3f& operator*=(float multiplier);
 
+	Vec3f& operator/=(float divider);
+
 	Vec3f& operator+=(float addition);
 
 	Vec3f& operator+=(const Vec3f& other);
@@ -49,5 +51,7 @@ Vec3f operator+(const Vec3f& v1, const Vec3f& v2);
 Vec3f operator-(const Vec3f& v1, const Vec3f& v2);
 
 Vec3f operator*(float multiplier, Vec3f v);
+
+Vec3f operator/(const Vec3f& v, float divider);
 
 #endif
