@@ -349,9 +349,15 @@ void drawTriangle(
 		const Vec3f& n2 = drawingVertex2.normal;
 		const int yDiff = vHigh.y - vLow.y;
 		const int zDiff = vHigh.z - vLow.z;
-		int pixelIndex = vLow.y * image.get_width() + x; // pixelIndex >= 0
+		int pixelIndex = vLow.y * image.get_width() + x;
 
 		for (int y = vLow.y; y <= vHigh.y; ++y, pixelIndex += image.get_width()) {
+
+			// Отсечь пиксель, если он не попадает в изображение.
+			if (pixelIndex < 0 || pixelIndex >= zBuffer.size()) {
+				continue;
+			}
+
 			const float t = static_cast<float>(y - vLow.y) / yDiff;
 			const int z = vLow.z + static_cast<int>(std::round(t * zDiff));
 

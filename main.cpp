@@ -1,6 +1,8 @@
 #include "DrawTools.hpp"
 #include "ObjFormatModel.hpp"
+#include "Mat4.hpp"
 #include "Vec3i.hpp"
+#include "Vec4.hpp"
 
 #include <iostream>
 #include <limits>
@@ -52,6 +54,26 @@ int main()
 }
 
 
+Vec3f getCentralProjection(const Vec3f& point)
+{
+	// Практика из статьи 4.1. "Построение перспективного изображения" (https://habr.com/ru/post/248611/)
+	// Применить искажение координат, чтобы создать центральную проекцию.
+	// Камера в точке (0, 0, cameraDistance) и смотрит на плоскость z = 0 (плоскость проекции).
+	// Чем больше cameraDistance, тем больше изображение похоже на параллельную проекцию.
+	static float cameraDistance = 5.f;
+	static Mat4 cameraMatrix{
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, -1 / cameraDistance, 1
+	};
+
+	const Vec4 cameraPoint = cameraMatrix * Vec4(point, 1);
+	const auto projectedPoint = cameraPoint.xyz() / cameraPoint.w;
+	return projectedPoint;
+}
+
+
 void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture)
 {
 	const int halfImageSize = image.get_width() / 2;
@@ -71,6 +93,11 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		Vec3f vertex0 = vertexes[coordVertexIndexes[0]];
 		Vec3f vertex1 = vertexes[coordVertexIndexes[1]];
 		Vec3f vertex2 = vertexes[coordVertexIndexes[2]];
+
+		// Применить центральную проекцию ко всем вершинам треугольника.
+		vertex0 = getCentralProjection(vertex0);
+		vertex1 = getCentralProjection(vertex1);
+		vertex2 = getCentralProjection(vertex2);
 
 		// Преобразовать координаты, чтобы растянуть рендер модели на всё изображение
 		(vertex0 *= halfImageSize) += halfImageSize;
