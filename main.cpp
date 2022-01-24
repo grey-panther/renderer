@@ -18,8 +18,9 @@ const int IMAGE_SIZE = 1800;
 
 void drawModelEdges(TGAImage& image, const ObjFormatModel& model);
 
-void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture);
+void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix);
 
+Mat4 getTransformMatrix(int renderTargetWidth, int renderTargetHeight);
 
 int main()
 {
@@ -46,7 +47,8 @@ int main()
 //	Vec3f p3(70, 180, 0);
 //	drawTriangle(p1, p2, p3, image, WHITE_COLOR);
 
-	drawModelFaces(image, model, texture);
+	const Mat4 transformMatrix = getTransformMatrix(image.get_width(), image.get_height());
+	drawModelFaces(image, model, texture, transformMatrix);
 
 //	drawModelEdges(image, model);
 
@@ -57,7 +59,59 @@ int main()
 }
 
 
-Vec3f getCentralProjection(const Vec3f& point)
+Mat4 getTransformMatrix(int renderTargetWidth, int renderTargetHeight)
+{
+	const float PI = 3.1415926f;
+	const float angle = PI / 2;
+	using std::cos;
+	using std::sin;
+	const Mat4 rotationMatrixX {
+			1.f,	0.f,		0.f,			0.f,
+			0.f,	cos(angle),	-sin(angle),	0.f,
+			0.f,	sin(angle), cos(angle), 	0.f,
+			0.f,	0.f,		0.f,			1.f,
+	};
+	const Mat4 rotationMatrixY {
+			cos(angle),		0.f,	sin(angle),	0.f,
+			0.f,			1.f,	0.f,		0.f,
+			-sin(angle),	0.f,	cos(angle),	0.f,
+			0.f,			0.f,	0.f,		1.f,
+	};
+	const Mat4 rotationMatrixZ {
+			cos(angle),	-sin(angle),	0.f,	0.f,
+			sin(angle),	cos(angle),		0.f,	0.f,
+			0.f,		0.f,			1.f,	0.f,
+			0.f,		0.f,			0.f,	1.f,
+	};
+
+	const float scale = renderTargetHeight / 3.f;
+	const Mat4 scaleMatrix {
+			scale,	0.f,	0.f,	0.f,
+			0.f,	scale,	0.f,	0.f,
+			0.f,	0.f,	scale,	0.f,
+			0.f,	0.f,	0.f,	1.f,
+	};
+
+	// Позиция в мировых координатах - центр image.
+	const Vec3f t { renderTargetWidth * 0.5f, renderTargetHeight * 0.5f, 1000.f};
+	const Mat4 translateMatrix {
+			1, 0, 0, t.x,
+			0, 1, 0, t.y,
+			0, 0, 1, t.z,
+			0, 0, 0, 1,
+	};
+
+	// Next transformations are applied in order from right to left:
+	// rotation - first
+	// scale - second
+	// translation - third
+//	const Mat4 transformMatrix = translateMatrix * scaleMatrix * rotationMatrixY;
+	const Mat4 transformMatrix = translateMatrix * scaleMatrix;
+	return transformMatrix;
+}
+
+
+Vec4 getCentralProjection(const Vec4& point)
 {
 	// Практика из статьи 4.1. "Построение перспективного изображения" (https://habr.com/ru/post/248611/)
 	// Применить искажение координат, чтобы создать центральную проекцию.
@@ -71,15 +125,14 @@ Vec3f getCentralProjection(const Vec3f& point)
 			0, 0, -1 / cameraDistance, 1
 	};
 
-	const Vec4 cameraPoint = cameraMatrix * Vec4(point, 1);
-	const auto projectedPoint = cameraPoint.xyz() / cameraPoint.w;
+	const Vec4 cameraPoint = cameraMatrix * point;
+	const auto projectedPoint = Vec4(cameraPoint.xyz() / cameraPoint.w, 1);
 	return projectedPoint;
 }
 
 
-void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture)
+void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix)
 {
-	const int halfImageSize = image.get_width() / 2;
 	const std::vector<Vec3f>& vertexes = model.getVertexes();
 	const std::vector<ModelFace>& faces = model.getFaces();
 
@@ -93,19 +146,21 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		const ModelFace::Indices& coordVertexIndexes = face.getCoordVertexIndexes();
 
 		// Нормализованные (от 0 до 1) координаты вершин треугольника.
-		Vec3f vertex0 = vertexes[coordVertexIndexes[0]];
-		Vec3f vertex1 = vertexes[coordVertexIndexes[1]];
-		Vec3f vertex2 = vertexes[coordVertexIndexes[2]];
+		auto vertex0 = Vec4(vertexes[coordVertexIndexes[0]], 1);
+		auto vertex1 = Vec4(vertexes[coordVertexIndexes[1]], 1);
+		auto vertex2 = Vec4(vertexes[coordVertexIndexes[2]], 1);
+
+		// Apply transformations.
+		vertex0 = transformMatrix * vertex0;
+		vertex1 = transformMatrix * vertex1;
+		vertex2 = transformMatrix * vertex2;
 
 		// Применить центральную проекцию ко всем вершинам треугольника.
+		/*
 		vertex0 = getCentralProjection(vertex0);
 		vertex1 = getCentralProjection(vertex1);
 		vertex2 = getCentralProjection(vertex2);
-
-		// Преобразовать координаты, чтобы растянуть рендер модели на всё изображение
-		(vertex0 *= halfImageSize) += halfImageSize;
-		(vertex1 *= halfImageSize) += halfImageSize;
-		(vertex2 *= halfImageSize) += halfImageSize;
+		*/
 
 		// Получить нормализованные текстурные координаты.
 		const std::array<int, ModelFace::FACE_VERTEXES_COUNT> tvIndexes = face.getTextureVertexIndexes();
@@ -123,9 +178,9 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 
 		drawTriangle(
 				{
-					VertexData(vertex0.round(), tv0, vn0),
-					VertexData(vertex1.round(), tv1, vn1),
-					VertexData(vertex2.round(), tv2, vn2),
+					VertexData(vertex0.xyz().round(), tv0, vn0),
+					VertexData(vertex1.xyz().round(), tv1, vn1),
+					VertexData(vertex2.xyz().round(), tv2, vn2),
 				},
 				zBuffer,
 				image,
