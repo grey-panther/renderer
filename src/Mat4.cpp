@@ -41,6 +41,25 @@ const Mat4::Row& Mat4::operator[](size_t i) const
 }
 
 
+void Mat4::transpose()
+{
+	std::swap(data[0][1], data[1][0]);
+	std::swap(data[0][2], data[2][0]);
+	std::swap(data[0][3], data[3][0]);
+	std::swap(data[1][2], data[2][1]);
+	std::swap(data[1][3], data[3][1]);
+	std::swap(data[2][3], data[3][2]);
+}
+
+
+Mat4 Mat4::getTransposed() const
+{
+	Mat4 copy = *this;
+	copy.transpose();
+	return copy;
+}
+
+
 const Mat4& Mat4::identity()
 {
 	static const Mat4 identityMatrix(
@@ -61,5 +80,32 @@ Vec4 operator*(const Mat4& m, const Vec4& v)
 			m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * v.w,
 			m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3] * v.w
 	);
+	return result;
+}
+
+
+// Перемножение матрицы на вектор-столбец.
+std::array<float, 4> operator*(const Mat4& m, const std::array<float, 4>& v)
+{
+	std::array<float, 4> result {
+			m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2] + m[0][3] * v[3],
+			m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2] + m[1][3] * v[3],
+			m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2] + m[2][3] * v[3],
+			m[3][0] * v[0] + m[3][1] * v[1] + m[3][2] * v[2] + m[3][3] * v[3]
+	};
+	return result;
+}
+
+
+Mat4 operator*(const Mat4& m1, const Mat4& m2)
+{
+	const Mat4 m2Transposed = m2.getTransposed();
+	Mat4 result;
+	result[0] = m1 * m2Transposed[0];
+	result[1] = m1 * m2Transposed[1];
+	result[2] = m1 * m2Transposed[2];
+	result[3] = m1 * m2Transposed[3];
+	result.transpose();
+
 	return result;
 }

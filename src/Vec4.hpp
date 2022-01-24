@@ -41,3 +41,13 @@ Vec4 operator-(const Vec4& v1, const Vec4& v2);
 Vec4 operator*(float multiplier, const Vec4& v);
 
 Vec4 operator/(const Vec4& v, float divider);
+
+inline bool operator==(const Vec4& v1, const Vec4& v2)
+{
+	return (v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z);
+}
+
+inline bool operator!=(const Vec4& v1, const Vec4& v2)
+{
+	return !(v1 == v2);
+}

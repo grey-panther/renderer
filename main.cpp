@@ -1,6 +1,7 @@
 #include "DrawTools.hpp"
 #include "ObjFormatModel.hpp"
 #include "Mat4.hpp"
+#include "MathTests.hpp"
 #include "Vec3i.hpp"
 #include "Vec4.hpp"
 
@@ -22,6 +23,8 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 
 int main()
 {
+	testMat4();
+
 	const ObjFormatModel model("../assets/african_head.obj");
 	TGAImage image(IMAGE_SIZE, IMAGE_SIZE, TGAImage::RGB);
 

@@ -24,6 +24,10 @@ public:
 
 	const Row& operator[](size_t i) const;
 
+	void transpose();
+
+	Mat4 getTransposed() const;
+
 	/**
 	 * @brief Получить единичную матрицу.
 	 */
@@ -31,3 +35,15 @@ public:
 };
 
 Vec4 operator*(const Mat4& m, const Vec4& v);
+
+Mat4 operator*(const Mat4& m1, const Mat4& m2);
+
+inline bool operator==(const Mat4& m1, const Mat4& m2)
+{
+	return m1.data == m2.data;
+}
+
+inline bool operator!=(const Mat4& m1, const Mat4& m2)
+{
+	return !(m1 == m2);
+}
