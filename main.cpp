@@ -9,9 +9,11 @@
 #include <limits>
 
 
-const TGAColor WHITE_COLOR = TGAColor(255, 255, 255, 255);
-const TGAColor RED_COLOR = TGAColor(255, 0, 0, 255);
-const TGAColor GREEN_COLOR = TGAColor(0, 255, 0, 255);
+static const TGAColor WHITE_COLOR = TGAColor(255, 255, 255, 255);
+static const TGAColor RED_COLOR = TGAColor(255, 0, 0, 255);
+static const TGAColor GREEN_COLOR = TGAColor(0, 255, 0, 255);
+static const TGAColor BLUE_COLOR = TGAColor(0, 0, 255, 255);
+static const float PI = 3.1415926f;
 
 const int IMAGE_SIZE = 1800;
 //const int IMAGE_SIZE = 200;
@@ -20,7 +22,9 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model);
 
 void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix);
 
-Mat4 getTransformMatrix(int renderTargetWidth, int renderTargetHeight);
+Mat4 getViewMatrix();
+
+Mat4 getModelTransformMatrix(int renderTargetWidth, int renderTargetHeight);
 
 int main()
 {
@@ -47,10 +51,26 @@ int main()
 //	Vec3f p3(70, 180, 0);
 //	drawTriangle(p1, p2, p3, image, WHITE_COLOR);
 
-	const Mat4 transformMatrix = getTransformMatrix(image.get_width(), image.get_height());
-	drawModelFaces(image, model, texture, transformMatrix);
+	const Mat4 viewMatrix = getViewMatrix();
+	const Mat4 modelMatrix = getModelTransformMatrix(image.get_width(), image.get_height());
+	const Mat4 resultMatrix = viewMatrix * modelMatrix;
+
+	drawModelFaces(image, model, texture, resultMatrix);
 
 //	drawModelEdges(image, model);
+
+	// Draw basis vectors
+	Vec4 center {0, 0, 0, 1};
+	Vec4 i {100, 0, 0, 1};
+	Vec4 j {0, 100, 0, 1};
+	Vec4 k {0, 0, 100, 1};
+	center = viewMatrix * center;
+	i = viewMatrix * i;
+	j = viewMatrix * j;
+	k = viewMatrix * k;
+	drawLine(Vec2i(center.x, center.y), Vec2i(i.x, i.y), image, RED_COLOR);
+	drawLine(Vec2i(center.x, center.y), Vec2i(j.x, j.y), image, GREEN_COLOR);
+	drawLine(Vec2i(center.x, center.y), Vec2i(k.x, k.y), image, BLUE_COLOR);
 
 	image.flip_vertically(); // origin at the left bottom corner of the image
 	image.write_tga_file("output.tga");
@@ -59,9 +79,38 @@ int main()
 }
 
 
-Mat4 getTransformMatrix(int renderTargetWidth, int renderTargetHeight)
+Mat4 getViewMatrix()
 {
-	const float PI = 3.1415926f;
+	const float angleY = - PI / 4;
+	using std::cos;
+	using std::sin;
+	const Mat4 viewRotationY = {
+			cos(angleY),	0,	sin(angleY),	0,
+			0, 				1,	0,				0,
+			-sin(angleY),	0,	cos(angleY),	0,
+			0, 				0,	0,				1,
+	};
+	const float angleX = PI / 8;
+	const Mat4 viewRotationX = {
+			1,	0,				0,				0,
+			0,	cos(angleX),	-sin(angleX),	0,
+			0,	sin(angleX),	cos(angleX),	0,
+			0,	0,				0,				1,
+	};
+	const Mat4 viewTranslation = {
+			1,	0,	0,	100,
+			0, 	1,	0,	200,
+			0,	0,	1,	1000,
+			0, 	0,	0,	1,
+	};
+	const Mat4 viewMatrix = viewTranslation * viewRotationX * viewRotationY;
+
+	return viewMatrix;
+}
+
+
+Mat4 getModelTransformMatrix(int renderTargetWidth, int renderTargetHeight)
+{
 	const float angle = PI / 2;
 	using std::cos;
 	using std::sin;
@@ -93,7 +142,7 @@ Mat4 getTransformMatrix(int renderTargetWidth, int renderTargetHeight)
 	};
 
 	// Позиция в мировых координатах - центр image.
-	const Vec3f t { renderTargetWidth * 0.5f, renderTargetHeight * 0.5f, 1000.f};
+	const Vec3f t { renderTargetWidth * 0.5f, renderTargetHeight * 0.5f, 0.f};
 	const Mat4 translateMatrix {
 			1, 0, 0, t.x,
 			0, 1, 0, t.y,
