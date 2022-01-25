@@ -18,7 +18,7 @@ static const float PI = 3.1415926f;
 const int IMAGE_SIZE = 1800;
 //const int IMAGE_SIZE = 200;
 
-void drawModelEdges(TGAImage& image, const ObjFormatModel& model);
+void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& transformMatrix);
 
 void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix);
 
@@ -57,7 +57,7 @@ int main()
 
 	drawModelFaces(image, model, texture, resultMatrix);
 
-//	drawModelEdges(image, model);
+//	drawModelEdges(image, model, resultMatrix);
 
 	// Draw basis vectors
 	Vec4 center {0, 0, 0, 1};
@@ -250,9 +250,8 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 }
 
 
-void drawModelEdges(TGAImage& image, const ObjFormatModel& model)
+void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& transformMatrix)
 {
-	int halfImageSize = image.get_width() / 2;
 	const std::vector<Vec3f>& vertexes = model.getVertexes();
 	const std::vector<ModelFace>& faces = model.getFaces();
 
@@ -267,7 +266,8 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model)
 
 		for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
 			int currentVertexGlobalIndex = coordVertexIndexes[i];
-			const Vec3f& currentVertex = vertexes[currentVertexGlobalIndex];
+			Vec3f currentVertex = vertexes[currentVertexGlobalIndex];
+			currentVertex = (transformMatrix * Vec4(currentVertex, 1)).xyz();
 
 			int nextCoordVertexIndex = i + 1;
 			if (nextCoordVertexIndex >= ModelFace::FACE_VERTEXES_COUNT) {
@@ -275,12 +275,13 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model)
 				nextCoordVertexIndex = 0;
 			}
 			int nextVertexGlobalIndex = coordVertexIndexes[nextCoordVertexIndex];
-			const Vec3f& nextVertex = vertexes[nextVertexGlobalIndex];
+			Vec3f nextVertex = vertexes[nextVertexGlobalIndex];
+			nextVertex = (transformMatrix * Vec4(nextVertex, 1)).xyz();
 
-			int x0 = (int) round(currentVertex.x * halfImageSize) + halfImageSize;
-			int y0 = (int) round(currentVertex.y * halfImageSize) + halfImageSize;
-			int x1 = (int) round(nextVertex.x * halfImageSize) + halfImageSize;
-			int y1 = (int) round(nextVertex.y * halfImageSize) + halfImageSize;
+			const int x0 = (int) std::round(currentVertex.x);
+			const int y0 = (int) std::round(currentVertex.y);
+			const int x1 = (int) std::round(nextVertex.x);
+			const int y1 = (int) std::round(nextVertex.y);
 			drawLine(x0, y0, x1, y1, image, WHITE_COLOR);
 		}
 	}
