@@ -221,15 +221,25 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		// Получить нормали к каждой из вершин.
 		const ModelFace::Indices& vnIndexes = face.getVertexNormalIndexes();
 		const std::vector<Vec3f>& vertexNormals = model.getVertexNormals();
-		const Vec3f& vn0 = vertexNormals[vnIndexes[0]];
-		const Vec3f& vn1 = vertexNormals[vnIndexes[1]];
-		const Vec3f& vn2 = vertexNormals[vnIndexes[2]];
+		const Vec3f& normal0 = vertexNormals[vnIndexes[0]];
+		const Vec3f& normal1 = vertexNormals[vnIndexes[1]];
+		const Vec3f& normal2 = vertexNormals[vnIndexes[2]];
+
+		// Пока преобразования аффинные (без перспективных искажений),
+		// можно преобразовывать нормали с помощью той же матрицы transformMatrix.
+		// Иначе надо использовать транспонированную обратную матрицу к transformMatrix.
+		const Vec4 transformedNormal0 = transformMatrix * Vec4(normal0, 0);
+		const Vec4 transformedNormal1 = transformMatrix * Vec4(normal1, 0);
+		const Vec4 transformedNormal2 = transformMatrix * Vec4(normal2, 0);
+		const Vec3f n0 = transformedNormal0.xyz().normalize();
+		const Vec3f n1 = transformedNormal1.xyz().normalize();
+		const Vec3f n2 = transformedNormal2.xyz().normalize();
 
 		drawTriangle(
 				{
-					VertexData(vertex0.xyz().round(), tv0, vn0),
-					VertexData(vertex1.xyz().round(), tv1, vn1),
-					VertexData(vertex2.xyz().round(), tv2, vn2),
+					VertexData(vertex0.xyz().round(), tv0, n0),
+					VertexData(vertex1.xyz().round(), tv1, n1),
+					VertexData(vertex2.xyz().round(), tv2, n2),
 				},
 				zBuffer,
 				image,
