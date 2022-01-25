@@ -18,6 +18,10 @@ static const float PI = 3.1415926f;
 const int IMAGE_SIZE = 1800;
 //const int IMAGE_SIZE = 200;
 
+void drawPlayground(TGAImage& image);
+
+void drawAxes(TGAImage& image, const Mat4& transformMatrix);
+
 void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& transformMatrix);
 
 void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix);
@@ -30,52 +34,68 @@ int main()
 {
 	testMat4();
 
-	const ObjFormatModel model("../assets/african_head.obj");
-	TGAImage image(IMAGE_SIZE, IMAGE_SIZE, TGAImage::RGB);
+	// Load head model
+	const ObjFormatModel headModel("../assets/african_head.obj");
+	TGAImage headTexture(1024, 1024, TGAImage::RGB);
+	headTexture.read_tga_file("../assets/african_head_diffuse.tga");
+	headTexture.flip_vertically();
 
-	TGAImage texture(1024, 1024, TGAImage::RGB);
-	texture.read_tga_file("../assets/african_head_diffuse.tga");
-	texture.flip_vertically();
+	// Init output image
+	TGAImage outputImage(IMAGE_SIZE, IMAGE_SIZE, TGAImage::RGB);
 
-//	const Vec3i p1(180, 50);
-//	const Vec3i p2(150, 1);
-//	const Vec3i p3(70, 180);
-//	drawLine(p1.xy(), p2.xy(), image, RED_COLOR);
-//	drawLine(p1.xy(), p3.xy(), image, RED_COLOR);
-//	drawLine(p2.xy(), p3.xy(), image, RED_COLOR);
+//	drawPlayground(outputImage);
+
+	const Mat4 viewMatrix = getViewMatrix();
+	const Mat4 modelMatrix = getModelTransformMatrix(outputImage.get_width(), outputImage.get_height());
+	const Mat4 resultMatrix = viewMatrix * modelMatrix;
+
+	drawModelFaces(outputImage, headModel, headTexture, resultMatrix);
+
+//	drawModelEdges(outputImage, headModel, resultMatrix);
+
+	// Draw base axes in (0,0,0) in world coordinates
+	drawAxes(outputImage, viewMatrix);
+
+	outputImage.flip_vertically(); // origin at the left bottom corner of the outputImage
+	outputImage.write_tga_file("output.tga");
+
+	return 0;
+}
+
+
+// Упражнения из статей 1-3.
+void drawPlayground(TGAImage& image)
+{
+	const Vec3i p1(180, 50);
+	const Vec3i p2(150, 1);
+	const Vec3i p3(70, 180);
+	drawLine(p1.xy(), p2.xy(), image, RED_COLOR);
+	drawLine(p1.xy(), p3.xy(), image, RED_COLOR);
+	drawLine(p2.xy(), p3.xy(), image, RED_COLOR);
 //	drawTriangle(p1, p2, p3, {}, image, WHITE_COLOR);
 //	drawTriangle(p3, p1, Vec3i(210, 80), {}, image, GREEN_COLOR);
 
-//	Vec3f p1(180, 50, 0);
-//	Vec3f p2(150, 1, 0);
-//	Vec3f p3(70, 180, 0);
-//	drawTriangle(p1, p2, p3, image, WHITE_COLOR);
+	Vec3f p4(180, 50, 0);
+	Vec3f p5(150, 1, 0);
+	Vec3f p6(70, 180, 0);
+//	drawTriangle(p4, p5, p6, image, WHITE_COLOR);
+}
 
-	const Mat4 viewMatrix = getViewMatrix();
-	const Mat4 modelMatrix = getModelTransformMatrix(image.get_width(), image.get_height());
-	const Mat4 resultMatrix = viewMatrix * modelMatrix;
 
-	drawModelFaces(image, model, texture, resultMatrix);
-
-//	drawModelEdges(image, model, resultMatrix);
-
-	// Draw basis vectors
+// Нарисовать оси Декартовой системы координат.
+void drawAxes(TGAImage& image, const Mat4& transformMatrix)
+{
 	Vec4 center {0, 0, 0, 1};
 	Vec4 i {100, 0, 0, 1};
 	Vec4 j {0, 100, 0, 1};
 	Vec4 k {0, 0, 100, 1};
-	center = viewMatrix * center;
-	i = viewMatrix * i;
-	j = viewMatrix * j;
-	k = viewMatrix * k;
+	center = transformMatrix * center;
+	i = transformMatrix * i;
+	j = transformMatrix * j;
+	k = transformMatrix * k;
 	drawLine(Vec2i(center.x, center.y), Vec2i(i.x, i.y), image, RED_COLOR);
 	drawLine(Vec2i(center.x, center.y), Vec2i(j.x, j.y), image, GREEN_COLOR);
 	drawLine(Vec2i(center.x, center.y), Vec2i(k.x, k.y), image, BLUE_COLOR);
-
-	image.flip_vertically(); // origin at the left bottom corner of the image
-	image.write_tga_file("output.tga");
-
-	return 0;
 }
 
 
