@@ -15,9 +15,6 @@ static const TGAColor GREEN_COLOR = TGAColor(0, 255, 0, 255);
 static const TGAColor BLUE_COLOR = TGAColor(0, 0, 255, 255);
 static const float PI = 3.1415926f;
 
-const int IMAGE_SIZE = 1800;
-//const int IMAGE_SIZE = 200;
-
 void drawPlayground(TGAImage& image);
 
 void drawAxes(TGAImage& image, const Mat4& transformMatrix);
@@ -26,9 +23,11 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& tr
 
 void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix);
 
+Mat4 getViewportMatrix(int width, int height);
+
 Mat4 getViewMatrix();
 
-Mat4 getModelTransformMatrix(int renderTargetWidth, int renderTargetHeight);
+Mat4 getModelTransformMatrix();
 
 int main()
 {
@@ -41,20 +40,23 @@ int main()
 	headTexture.flip_vertically();
 
 	// Init output image
-	TGAImage outputImage(IMAGE_SIZE, IMAGE_SIZE, TGAImage::RGB);
+	const int OUTPUT_IMAGE_WIDTH = 1920;
+	const int OUTPUT_IMAGE_HEIGHT = 1080;
+	TGAImage outputImage(OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_HEIGHT, TGAImage::RGB);
 
 //	drawPlayground(outputImage);
 
+	const Mat4 viewportMatrix = getViewportMatrix(outputImage.get_width(), outputImage.get_height());
 	const Mat4 viewMatrix = getViewMatrix();
-	const Mat4 modelMatrix = getModelTransformMatrix(outputImage.get_width(), outputImage.get_height());
-	const Mat4 resultMatrix = viewMatrix * modelMatrix;
+	const Mat4 modelMatrix = getModelTransformMatrix();
+	const Mat4 resultMatrix = viewportMatrix * viewMatrix * modelMatrix;
 
 	drawModelFaces(outputImage, headModel, headTexture, resultMatrix);
 
 //	drawModelEdges(outputImage, headModel, resultMatrix);
 
 	// Draw base axes in (0,0,0) in world coordinates
-	drawAxes(outputImage, viewMatrix);
+	drawAxes(outputImage, viewportMatrix * viewMatrix);
 
 	outputImage.flip_vertically(); // origin at the left bottom corner of the outputImage
 	outputImage.write_tga_file("output.tga");
@@ -86,9 +88,9 @@ void drawPlayground(TGAImage& image)
 void drawAxes(TGAImage& image, const Mat4& transformMatrix)
 {
 	Vec4 center {0, 0, 0, 1};
-	Vec4 i {100, 0, 0, 1};
-	Vec4 j {0, 100, 0, 1};
-	Vec4 k {0, 0, 100, 1};
+	Vec4 i {1, 0, 0, 1};
+	Vec4 j {0, 1, 0, 1};
+	Vec4 k {0, 0, 1, 1};
 	center = transformMatrix * center;
 	i = transformMatrix * i;
 	j = transformMatrix * j;
@@ -96,6 +98,24 @@ void drawAxes(TGAImage& image, const Mat4& transformMatrix)
 	drawLine(Vec2i(center.x, center.y), Vec2i(i.x, i.y), image, RED_COLOR);
 	drawLine(Vec2i(center.x, center.y), Vec2i(j.x, j.y), image, GREEN_COLOR);
 	drawLine(Vec2i(center.x, center.y), Vec2i(k.x, k.y), image, BLUE_COLOR);
+}
+
+
+// Get matrix that scales an image to the chosen resolution.
+Mat4 getViewportMatrix(int width, int height)
+{
+	// from coordinates in [-1; 1], [-1; 1] to coordinates in [0, width], [0, height]
+	// s - size
+	const auto s = static_cast<float>(std::min<int>(width, height));
+	const auto w = static_cast<float>(width);
+	const auto h = static_cast<float>(height);
+	const Mat4 matrix {
+			s/2,	0,		0,		w/2,
+			0,		s/2,	0,		h/2,
+			0,		0,		s/2,	0,
+			0,		0,		0, 		1,
+	};
+	return matrix;
 }
 
 
@@ -117,10 +137,11 @@ Mat4 getViewMatrix()
 			0,	sin(angleX),	cos(angleX),	0,
 			0,	0,				0,				1,
 	};
+	const float s = 0.35f;
 	const Mat4 viewTranslation = {
-			1,	0,	0,	100,
-			0, 	1,	0,	200,
-			0,	0,	1,	1000,
+			s,	0,	0,	-0.5f,
+			0, 	s,	0,	-0.5f,
+			0,	0,	s,	1000,
 			0, 	0,	0,	1,
 	};
 	const Mat4 viewMatrix = viewTranslation * viewRotationX * viewRotationY;
@@ -129,7 +150,7 @@ Mat4 getViewMatrix()
 }
 
 
-Mat4 getModelTransformMatrix(int renderTargetWidth, int renderTargetHeight)
+Mat4 getModelTransformMatrix()
 {
 	const float angle = PI / 2;
 	using std::cos;
@@ -153,7 +174,7 @@ Mat4 getModelTransformMatrix(int renderTargetWidth, int renderTargetHeight)
 			0.f,		0.f,			0.f,	1.f,
 	};
 
-	const float scale = renderTargetHeight / 3.f;
+	const float scale = 2.f;
 	const Mat4 scaleMatrix {
 			scale,	0.f,	0.f,	0.f,
 			0.f,	scale,	0.f,	0.f,
@@ -162,7 +183,7 @@ Mat4 getModelTransformMatrix(int renderTargetWidth, int renderTargetHeight)
 	};
 
 	// Позиция в мировых координатах - центр image.
-	const Vec3f t { renderTargetWidth * 0.5f, renderTargetHeight * 0.5f, 0.f};
+	const Vec3f t { 3.f, 2.f, 0.f};
 	const Mat4 translateMatrix {
 			1, 0, 0, t.x,
 			0, 1, 0, t.y,
