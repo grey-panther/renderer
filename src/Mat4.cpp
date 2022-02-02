@@ -29,13 +29,13 @@ Mat4::Mat4()
 }
 
 
-Mat4::Row& Mat4::operator[](size_t i)
+Mat4::Row& Mat4::operator[](std::size_t i)
 {
 	return data[i];
 }
 
 
-const Mat4::Row& Mat4::operator[](size_t i) const
+const Mat4::Row& Mat4::operator[](std::size_t i) const
 {
 	return data[i];
 }

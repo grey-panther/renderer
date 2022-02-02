@@ -20,9 +20,9 @@ public:
 
 	Mat4();
 
-	Row& operator[](size_t i);
+	Row& operator[](std::size_t i);
 
-	const Row& operator[](size_t i) const;
+	const Row& operator[](std::size_t i) const;
 
 	void transpose();
 
