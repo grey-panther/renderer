@@ -33,6 +33,12 @@ int main()
 {
 	testMat4();
 
+	// Load floor model
+	const ObjFormatModel floorModel("../assets/floor.obj");
+	TGAImage floorTexture(600, 600, TGAImage::RGB);
+	floorTexture.read_tga_file("../assets/floor_diffuse.tga");
+	floorTexture.flip_vertically();
+
 	// Load head model
 	const ObjFormatModel headModel("../assets/african_head.obj");
 	TGAImage headTexture(1024, 1024, TGAImage::RGB);
@@ -50,6 +56,8 @@ int main()
 	const Mat4 viewMatrix = getViewMatrix();
 	const Mat4 modelMatrix = getModelTransformMatrix();
 	const Mat4 resultMatrix = viewportMatrix * viewMatrix * modelMatrix;
+
+	drawModelFaces(outputImage, floorModel, floorTexture, resultMatrix);
 
 	drawModelFaces(outputImage, headModel, headTexture, resultMatrix);
 
