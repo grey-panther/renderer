@@ -1,5 +1,4 @@
-#ifndef RENDERER_MODELFACE_H
-#define RENDERER_MODELFACE_H
+#pragma once
 
 #include <array>
 
@@ -11,32 +10,36 @@ public:
 	using Indices = std::array<int, ModelFace::FACE_VERTEXES_COUNT>;
 
 private:
-	Indices _coordVertexIndexes;
-	Indices _textureVertexIndexes;
-	Indices _vertexNormalIndexes;
+	Indices _coordsIndices;
+	Indices _textureCoordsIndices;
+	Indices _normalsIndices;
 
 public:
-	ModelFace(const Indices& coordVertexIndexes,
-			  const Indices& textureVertexIndexes,
-			  const Indices& vertexNormalIndexes
+	ModelFace(const Indices& coordsIndices,
+			  const Indices& textureCoordsIndices,
+			  const Indices& normalsIndices
 	)
-			: _coordVertexIndexes(coordVertexIndexes)
-			, _textureVertexIndexes(textureVertexIndexes)
-			, _vertexNormalIndexes(vertexNormalIndexes)
+			: _coordsIndices(coordsIndices)
+			, _textureCoordsIndices(textureCoordsIndices)
+			, _normalsIndices(normalsIndices)
 	{
 	}
 
-	const Indices& getCoordVertexIndexes() const {
-		return _coordVertexIndexes;
+	[[nodiscard]]
+	inline const Indices& getCoordsIndices() const
+	{
+		return _coordsIndices;
 	}
 
-	const Indices& getTextureVertexIndexes() const {
-		return _textureVertexIndexes;
-	};
+	[[nodiscard]]
+	inline const Indices& getTextureCoordsIndices() const
+	{
+		return _textureCoordsIndices;
+	}
 
-	const Indices& getVertexNormalIndexes() const {
-		return _vertexNormalIndexes;
-	};
+	[[nodiscard]]
+	inline const Indices& getNormalsIndices() const
+	{
+		return _normalsIndices;
+	}
 };
-
-#endif //RENDERER_MODELFACE_H

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "iostream"
+
+
 #define assert(cond) \
 do { \
 	if (!bool(cond)) { \

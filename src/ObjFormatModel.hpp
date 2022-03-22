@@ -1,5 +1,4 @@
-#ifndef OBJFORMATMODEL_HPP
-#define OBJFORMATMODEL_HPP
+#pragma once
 
 #include "Vec3f.hpp"
 #include "ModelFace.h"
@@ -9,7 +8,8 @@
 
 
 /**
- * @brief Парсит и хранит Wavefront .obj 3D-модель.
+ * @brief Parses and stores Wavefront .obj 3D-model.
+ * @details See the full standard of Wavefront .obj definition here: https://en.wikipedia.org/wiki/Wavefront_.obj_file
  */
 class ObjFormatModel
 {
@@ -18,41 +18,48 @@ private:
 	static constexpr const char* TEXTURE_VERTEX_LABEL = "vt";
 	static constexpr const char* NORMAL_VERTEX_LABEL = "vn";
 	static constexpr const char* FACE_LABEL = "f";
-	static const int VERTEX_DEFINITION_ELEM_COUNT = 4;
-	static const int TEXTURE_VERTEX_DEFINITION_ELEM_COUNT = 5;
-	static const int VERTEX_NORMAL_DEFINITION_ELEM_COUNT = 5; // Почему 5? Потому что после vn идёт 2 пробела почему-то.
-	static const int FACE_DEFINITION_ELEM_COUNT = 4;
+	static constexpr int UNDEFINED_INDEX = -1;
 
-	std::vector<Vec3f> _coordVertexes;
-	std::vector<Vec3f> _textureVertexes;
-	std::vector<Vec3f> _vertexNormals;		///< Нормали к вершинам (могут быть не юнит-векторами).
+	std::vector<Vec3f> _coords;			///< Vertex coords in model space. Here must be 4-component vector.
+	std::vector<Vec3f> _textureCoords;
+	std::vector<Vec3f> _normals;		///< Normals to vertices. Might not be unit vectors.
 	std::vector<ModelFace> _faces;
 
 public:
-	explicit ObjFormatModel(const std::string& inputFilePath) {
+	explicit ObjFormatModel(const std::string& inputFilePath)
+	{
 		initializeFromFile(inputFilePath);
 	}
 
 	~ObjFormatModel() = default;
 
-	const std::vector<Vec3f>& getVertexes() const {
-		return _coordVertexes;
+	[[nodiscard]]
+	inline const std::vector<Vec3f>& getCoords() const
+	{
+		return _coords;
 	}
 
-	const std::vector<Vec3f>& getTextureVertexes() const {
-		return _textureVertexes;
+	[[nodiscard]]
+	inline const std::vector<Vec3f>& getTextureCoords() const
+	{
+		return _textureCoords;
 	}
 
-	const std::vector<Vec3f>& getVertexNormals() const {
-		return _vertexNormals;
+	[[nodiscard]]
+	inline const std::vector<Vec3f>& getNormals() const
+	{
+		return _normals;
 	}
 
-	const std::vector<ModelFace>& getFaces() const {
+	[[nodiscard]]
+	inline const std::vector<ModelFace>& getFaces() const
+	{
 		return _faces;
-	};
+	}
 
 private:
 	void initializeFromFile(const std::string& inputFilePath);
-};
 
-#endif
+	// Transforms .obj standard index (counted from 1 or till -1) to C-array index (counted from 0).
+	static int parseVertexIndex(const std::string& indexStr, int verticesCount);
+};

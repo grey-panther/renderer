@@ -223,7 +223,7 @@ Vec4 getCentralProjection(const Vec4& point)
 
 void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix)
 {
-	const std::vector<Vec3f>& vertexes = model.getVertexes();
+	const std::vector<Vec3f>& vertexes = model.getCoords();
 	const std::vector<ModelFace>& faces = model.getFaces();
 
 	const Vec3f lightVector(0, 0, 1);
@@ -233,7 +233,7 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 	std::vector<int> zBuffer(pixelsCount, std::numeric_limits<int>::min());
 
 	for (const ModelFace& face : faces) {
-		const ModelFace::Indices& coordVertexIndexes = face.getCoordVertexIndexes();
+		const ModelFace::Indices& coordVertexIndexes = face.getCoordsIndices();
 
 		// Нормализованные (от 0 до 1) координаты вершин треугольника.
 		auto vertex0 = Vec4(vertexes[coordVertexIndexes[0]], 1);
@@ -253,15 +253,16 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		*/
 
 		// Получить нормализованные текстурные координаты.
-		const std::array<int, ModelFace::FACE_VERTEXES_COUNT> tvIndexes = face.getTextureVertexIndexes();
-		const std::vector<Vec3f>& textureVertexes = model.getTextureVertexes();
+		const std::array<int, ModelFace::FACE_VERTEXES_COUNT> tvIndexes = face.getTextureCoordsIndices();
+		const std::vector<Vec3f>& textureVertexes = model.getTextureCoords();
 		const Vec3f& tv0 = textureVertexes[tvIndexes[0]];
 		const Vec3f& tv1 = textureVertexes[tvIndexes[1]];
 		const Vec3f& tv2 = textureVertexes[tvIndexes[2]];
 
 		// Получить нормали к каждой из вершин.
-		const ModelFace::Indices& vnIndexes = face.getVertexNormalIndexes();
-		const std::vector<Vec3f>& vertexNormals = model.getVertexNormals();
+		const ModelFace::Indices& vnIndexes = face.getNormalsIndices();
+		const std::vector<Vec3f>& vertexNormals = model.getNormals();
+		// TODO Посчитать нормальные векторы, если vertexNormals пуст. Или как-то по-другому обработать, чтобы не падало
 		const Vec3f& normal0 = vertexNormals[vnIndexes[0]];
 		const Vec3f& normal1 = vertexNormals[vnIndexes[1]];
 		const Vec3f& normal2 = vertexNormals[vnIndexes[2]];
@@ -293,7 +294,7 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 
 void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& transformMatrix)
 {
-	const std::vector<Vec3f>& vertexes = model.getVertexes();
+	const std::vector<Vec3f>& vertexes = model.getCoords();
 	const std::vector<ModelFace>& faces = model.getFaces();
 
 	int vertexesCount = (int) vertexes.size();
@@ -303,7 +304,7 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& tr
 
 	// Нарисовать все рёбра модели (каждое ребро, разделяемое 2мя гранями, рисуется дважды)
 	for (int faceIndex = 0; faceIndex < facesCount; faceIndex++) {
-		const ModelFace::Indices& coordVertexIndexes = faces[faceIndex].getCoordVertexIndexes();
+		const ModelFace::Indices& coordVertexIndexes = faces[faceIndex].getCoordsIndices();
 
 		for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
 			int currentVertexGlobalIndex = coordVertexIndexes[i];
