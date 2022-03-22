@@ -40,7 +40,7 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 			const std::string& y = elements[2];
 			const std::string& z = elements[3];
 			const std::string w = (size > 4) ? elements[4] : "1.0";
-			Vec3f coords(stof(x), stof(y), stof(z));
+			Vec4 coords(stof(x), stof(y), stof(z), stof(w));
 			_coords.push_back(coords);
 		}
 

@@ -231,7 +231,7 @@ Vec4 getCentralProjection(const Vec4& point)
 
 void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix)
 {
-	const std::vector<Vec3f>& vertexes = model.getCoords();
+	const std::vector<Vec4>& coords = model.getCoords();
 	const std::vector<ModelFace>& faces = model.getFaces();
 
 	const Vec3f lightVector(0, 0, 1);
@@ -244,9 +244,9 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		const ModelFace::Indices& coordVertexIndexes = face.getCoordsIndices();
 
 		// Нормализованные (от 0 до 1) координаты вершин треугольника.
-		auto vertex0 = Vec4(vertexes[coordVertexIndexes[0]], 1);
-		auto vertex1 = Vec4(vertexes[coordVertexIndexes[1]], 1);
-		auto vertex2 = Vec4(vertexes[coordVertexIndexes[2]], 1);
+		auto vertex0 = coords[coordVertexIndexes[0]];
+		auto vertex1 = coords[coordVertexIndexes[1]];
+		auto vertex2 = coords[coordVertexIndexes[2]];
 
 		// Apply transformations.
 		vertex0 = transformMatrix * vertex0;
@@ -302,7 +302,7 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 
 void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& transformMatrix)
 {
-	const std::vector<Vec3f>& vertexes = model.getCoords();
+	const std::vector<Vec4>& vertexes = model.getCoords();
 	const std::vector<ModelFace>& faces = model.getFaces();
 
 	int vertexesCount = (int) vertexes.size();
@@ -315,18 +315,16 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& tr
 		const ModelFace::Indices& coordVertexIndexes = faces[faceIndex].getCoordsIndices();
 
 		for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
-			int currentVertexGlobalIndex = coordVertexIndexes[i];
-			Vec3f currentVertex = vertexes[currentVertexGlobalIndex];
-			currentVertex = (transformMatrix * Vec4(currentVertex, 1)).xyz();
+			const int currentVertexGlobalIndex = coordVertexIndexes[i];
+			const Vec4 currentVertex = transformMatrix * vertexes[currentVertexGlobalIndex];
 
 			int nextCoordVertexIndex = i + 1;
 			if (nextCoordVertexIndex >= ModelFace::FACE_VERTEXES_COUNT) {
 				// Последняя вершина имеет ребро с первой вершиной
 				nextCoordVertexIndex = 0;
 			}
-			int nextVertexGlobalIndex = coordVertexIndexes[nextCoordVertexIndex];
-			Vec3f nextVertex = vertexes[nextVertexGlobalIndex];
-			nextVertex = (transformMatrix * Vec4(nextVertex, 1)).xyz();
+			const int nextVertexGlobalIndex = coordVertexIndexes[nextCoordVertexIndex];
+			const Vec4 nextVertex = transformMatrix * vertexes[nextVertexGlobalIndex];
 
 			const int x0 = (int) std::round(currentVertex.x);
 			const int y0 = (int) std::round(currentVertex.y);

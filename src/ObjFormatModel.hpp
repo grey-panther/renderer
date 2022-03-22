@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vec3f.hpp"
+#include "Vec4.hpp"
 #include "ModelFace.h"
 
 #include <vector>
@@ -20,7 +21,7 @@ private:
 	static constexpr const char* FACE_LABEL = "f";
 	static constexpr int UNDEFINED_INDEX = -1;
 
-	std::vector<Vec3f> _coords;			///< Vertex coords in model space. Here must be 4-component vector.
+	std::vector<Vec4> _coords;			///< Vertex coords in model space.
 	std::vector<Vec3f> _textureCoords;
 	std::vector<Vec3f> _normals;		///< Normals to vertices. Might not be unit vectors.
 	std::vector<ModelFace> _faces;
@@ -34,7 +35,7 @@ public:
 	~ObjFormatModel() = default;
 
 	[[nodiscard]]
-	inline const std::vector<Vec3f>& getCoords() const
+	inline const std::vector<Vec4>& getCoords() const
 	{
 		return _coords;
 	}
