@@ -12,3 +12,10 @@ do { \
 				"\tLocation: " __FILE__ ":" << std::to_string(__LINE__) << "\n"; \
 	} \
 } while(false);
+
+namespace String {
+	static const std::string& empty() {
+		static const std::string* empty = new std::string {};
+		return *empty;
+	}
+}
