@@ -365,7 +365,7 @@ void drawTriangle(
 			if (z > zBuffer[pixelIndex]) {
 
 				// Определить интенсивность цвета в данной точке треугольника.
-				const Vec3f normal = (n1 + t * (n2 - n1)); // TODO Надо нормализовывать или нет?
+				const Vec3f normal = (n1 + t * (n2 - n1)).normalize();
 				const float colorIntensity = Vec3f::dotMultiply(normal, lightVector);
 				if (colorIntensity < 0) {
 					// Отсечение невидимой точки.
