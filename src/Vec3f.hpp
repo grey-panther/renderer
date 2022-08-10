@@ -52,6 +52,8 @@ Vec3f operator-(const Vec3f& v1, const Vec3f& v2);
 
 Vec3f operator*(float multiplier, Vec3f v);
 
+inline Vec3f operator*(const Vec3f& v, float multiplier) { return operator*(multiplier, v); }
+
 Vec3f operator/(const Vec3f& v, float divider);
 
 #endif

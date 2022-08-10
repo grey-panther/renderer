@@ -80,9 +80,74 @@ void testMat4MultiplyMat4()
 }
 
 
+void testMat4Inverse1()
+{
+	const Mat4 m {
+			1, 2, -1, 1,
+			-1, 1, 2, -1,
+			2, -1, 2, 2,
+			1, 1, -1, 2,
+	};
+
+	const Mat4 inverse {
+		15 / 17.f	, -7 / 17.f	, 6 / 17.f	, -1,
+		6 / 17.f	, 4 / 17.f	, -1 / 17.f	, 0,
+		-1 / 17.f	, 5 / 17.f	, 3 / 17.f	, 0,
+		-11 / 17.f	, 4 / 17.f	, -1 / 17.f	, 1
+	};
+	const auto mul = m * inverse;
+	assert(mul == Mat4::identity());
+
+	const Mat4 calculatedInverse = m.getInverse();
+	assert(calculatedInverse == inverse);
+}
+
+
+void testMat4Inverse2()
+{
+	const Mat4 m {
+			6, -5, 8, 4,
+			9, 7, 5, 2,
+			7, 5, 3, 7,
+			-4, 8, -8, -3,
+	};
+
+	const Mat4 inverse {
+		139 / 25.f	, -77 / 100.f	, -93 / 100.f	, 473 / 100.f,
+		-3			, 1 / 2.f		, 1 / 2.f		, -5 / 2.f,
+		-134 / 25.f	, 87 / 100.f	, 83 / 100.f	, -463 / 100.f,
+		-28 / 25.f	, 1 / 25.f		, 9 / 25.f		, -24 / 25.f
+	};
+	const auto mul = m * inverse;
+	assert(mul == Mat4::identity());
+
+	const Mat4 calculatedInverse = m.getInverse();
+	assert(calculatedInverse == inverse);
+}
+
+
+void testMat4Inverse3()
+{
+	// Singular matrix (it doesn't have the inverse):
+	const Mat4 m {
+			6, -5, 8, 0,
+			9, 7, 5, 0,
+			7, 5, 3, 0,
+			-4, 8, -8, 0,
+	};
+
+	// If the determinant is zero, the inverse doesn't exist and the function returns a zero matrix.
+	const Mat4 calculatedInverse = m.getInverse();
+	assert(calculatedInverse == Mat4());
+}
+
+
 void testMat4()
 {
 	testMat4Transpose();
 	testMat4MultiplyVec4();
 	testMat4MultiplyMat4();
+	testMat4Inverse1();
+	testMat4Inverse2();
+	testMat4Inverse3();
 }

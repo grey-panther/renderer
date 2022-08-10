@@ -1,4 +1,6 @@
 #include "Mat4.hpp"
+#include "Utilities.hpp"
+#include "Vec3f.hpp"
 #include "Vec4.hpp"
 
 
@@ -60,6 +62,53 @@ Mat4 Mat4::getTransposed() const
 }
 
 
+Mat4 Mat4::getInverse() const
+{
+	// The formula was taken from the "Foundations of Game Engine Development" book, volume 1, chapter 1.7.
+
+	const auto a = Vec3f(data[0][0], data[1][0], data[2][0]);
+	const auto b = Vec3f(data[0][1], data[1][1], data[2][1]);
+	const auto c = Vec3f(data[0][2], data[1][2], data[2][2]);
+	const auto d = Vec3f(data[0][3], data[1][3], data[2][3]);
+
+	const auto& x = data[3][0];
+	const auto& y = data[3][1];
+	const auto& z = data[3][2];
+	const auto& w = data[3][3];
+
+	Vec3f s = Vec3f::crossMultiply(a, b);
+	Vec3f t = Vec3f::crossMultiply(c, d);
+	Vec3f u = a * y - b * x;
+	Vec3f v = c * w - d * z;
+
+	const float det = Vec3f::dotMultiply(s, v) + Vec3f::dotMultiply(t, u);
+	if (IsEqualFloat(det, 0.f)) {
+		// The inverse doesn't exist!
+		return {};
+	}
+	const float invDet = 1.f / det;
+
+	s *= invDet;
+	t *= invDet;
+	u *= invDet;
+	v *= invDet;
+
+	const Vec3f r0 = Vec3f::crossMultiply(b, v) + t * y;
+	const Vec3f r1 = Vec3f::crossMultiply(v, a) - t * x;
+	const Vec3f r2 = Vec3f::crossMultiply(d, u) + s * w;
+	const Vec3f r3 = Vec3f::crossMultiply(u, c) - s * z;
+
+	const Mat4 inverse {
+		r0.x, r0.y, r0.z, -Vec3f::dotMultiply(b, t),
+		r1.x, r1.y, r1.z, Vec3f::dotMultiply(a, t),
+		r2.x, r2.y, r2.z, -Vec3f::dotMultiply(d, s),
+		r3.x, r3.y, r3.z, Vec3f::dotMultiply(c, s),
+	};
+
+	return inverse;
+}
+
+
 const Mat4& Mat4::identity()
 {
 	static const Mat4 identityMatrix(
@@ -108,4 +157,19 @@ Mat4 operator*(const Mat4& m1, const Mat4& m2)
 	result.transpose();
 
 	return result;
+}
+
+
+bool operator==(const Mat4& m1, const Mat4& m2)
+{
+	for (int row = 0; row < 4; ++row) {
+		const auto& rowData1 = m1.data[row];
+		const auto& rowData2 = m2.data[row];
+		for (int column = 0; column < 4; ++column) {
+			if (!IsEqualFloat(rowData1[column], rowData2[column])) {
+				return false;
+			}
+		}
+	}
+	return true;
 }

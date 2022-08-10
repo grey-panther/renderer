@@ -2,6 +2,7 @@
 
 #include <array>
 #include "forwards.hpp"
+#include "Math.hpp"
 
 
 struct Mat4
@@ -26,7 +27,15 @@ public:
 
 	void transpose();
 
+	[[nodiscard]]
 	Mat4 getTransposed() const;
+
+	/**
+	 * @brief Calculates the inverse matrix.
+	 * @return The inverse matrix if it exists. A zero matrix if the inverse doesn't exist.
+	 */
+	[[nodiscard]]
+	Mat4 getInverse() const;
 
 	/**
 	 * @brief Получить единичную матрицу.
@@ -38,10 +47,7 @@ Vec4 operator*(const Mat4& m, const Vec4& v);
 
 Mat4 operator*(const Mat4& m1, const Mat4& m2);
 
-inline bool operator==(const Mat4& m1, const Mat4& m2)
-{
-	return m1.data == m2.data;
-}
+bool operator==(const Mat4& m1, const Mat4& m2);
 
 inline bool operator!=(const Mat4& m1, const Mat4& m2)
 {
