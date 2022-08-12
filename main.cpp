@@ -25,6 +25,8 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 
 Mat4 getViewportMatrix(int width, int height);
 
+Mat4 getProjectionMatrix();
+
 Mat4 getViewMatrix();
 
 Mat4 getModelTransformMatrix();
@@ -53,9 +55,10 @@ int main()
 //	drawPlayground(outputImage);
 
 	const Mat4 viewportMatrix = getViewportMatrix(outputImage.get_width(), outputImage.get_height());
+	const Mat4 projectionMatrix = getProjectionMatrix();
 	const Mat4 viewMatrix = getViewMatrix();
 	const Mat4 modelMatrix = getModelTransformMatrix();
-	const Mat4 resultMatrix = viewportMatrix * viewMatrix * modelMatrix;
+	const Mat4 resultMatrix = viewportMatrix * projectionMatrix * viewMatrix * modelMatrix;
 
 	drawModelFaces(outputImage, floorModel, floorTexture, resultMatrix);
 
@@ -64,7 +67,7 @@ int main()
 //	drawModelEdges(outputImage, headModel, resultMatrix);
 
 	// Draw base axes in (0,0,0) in world coordinates
-	drawAxes(outputImage, viewportMatrix * viewMatrix);
+	drawAxes(outputImage, viewportMatrix * projectionMatrix * viewMatrix);
 
 	outputImage.flip_vertically(); // origin at the left bottom corner of the outputImage
 	outputImage.write_tga_file("output.tga");
@@ -103,6 +106,13 @@ void drawAxes(TGAImage& image, const Mat4& transformMatrix)
 	i = transformMatrix * i;
 	j = transformMatrix * j;
 	k = transformMatrix * k;
+
+	// Transform coordinates from homogeneous to 3D-cartesian ones (make w == 1).
+	center /= center.w;
+	i /= i.w;
+	j /= j.w;
+	k /= k.w;
+
 	drawLine(Vec2i(center.x, center.y), Vec2i(i.x, i.y), image, RED_COLOR);
 	drawLine(Vec2i(center.x, center.y), Vec2i(j.x, j.y), image, GREEN_COLOR);
 	drawLine(Vec2i(center.x, center.y), Vec2i(k.x, k.y), image, BLUE_COLOR);
@@ -129,7 +139,7 @@ Mat4 getViewportMatrix(int width, int height)
 
 Mat4 getViewMatrix()
 {
-	const float angleY = - PI / 4;
+	const float angleY = 0;//- PI / 4;
 	using std::cos;
 	using std::sin;
 	const Mat4 viewRotationY = {
@@ -145,14 +155,23 @@ Mat4 getViewMatrix()
 			0,	sin(angleX),	cos(angleX),	0,
 			0,	0,				0,				1,
 	};
-	const float s = 0.35f;
+
+	const auto t = Vec3f(0, -0.5, -0.3);
 	const Mat4 viewTranslation = {
-			s,	0,	0,	-0.5f,
-			0, 	s,	0,	-0.5f,
-			0,	0,	s,	1000,
+			1,	0,	0,	t.x,
+			0,	1,	0,	t.y,
+			0,	0,	1,	t.z,
 			0, 	0,	0,	1,
 	};
-	const Mat4 viewMatrix = viewTranslation * viewRotationX * viewRotationY;
+
+	const float s = 0.35f;
+	const Mat4 viewScale = {
+			s,	0,	0,	0,
+			0, 	s,	0,	0,
+			0,	0,	s,	0,
+			0, 	0,	0,	1,
+	};
+	const Mat4 viewMatrix = viewTranslation * viewScale * viewRotationX * viewRotationY;
 
 	return viewMatrix;
 }
@@ -191,7 +210,7 @@ Mat4 getModelTransformMatrix()
 	};
 
 	// Позиция в мировых координатах - центр image.
-	const Vec3f t { 3.f, 2.f, 0.f};
+	const Vec3f t { 0.f, 2.f, 0.f};
 	const Mat4 translateMatrix {
 			1, 0, 0, t.x,
 			0, 1, 0, t.y,
@@ -209,23 +228,21 @@ Mat4 getModelTransformMatrix()
 }
 
 
-Vec4 getCentralProjection(const Vec4& point)
+Mat4 getProjectionMatrix()
 {
 	// Практика из статьи 4.1. "Построение перспективного изображения" (https://habr.com/ru/post/248611/)
 	// Применить искажение координат, чтобы создать центральную проекцию.
 	// Камера в точке (0, 0, cameraDistance) и смотрит на плоскость z = 0 (плоскость проекции).
 	// Чем больше cameraDistance, тем больше изображение похоже на параллельную проекцию.
-	static float cameraDistance = 5.f;
-	static Mat4 cameraMatrix{
+	static float cameraDistance = 1.5f;
+	static Mat4 projectionMatrix{
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
 			0, 0, -1 / cameraDistance, 1
 	};
 
-	const Vec4 cameraPoint = cameraMatrix * point;
-	const auto projectedPoint = Vec4(cameraPoint.xyz() / cameraPoint.w, 1);
-	return projectedPoint;
+	return projectionMatrix;
 }
 
 
@@ -235,6 +252,12 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 	const std::vector<ModelFace>& faces = model.getFaces();
 
 	const Vec3f lightVector(0, 0, 1);
+
+	// When we use only affine transformations (without perspective distortions),
+	// we can transform normals multiplying them by the transformMatrix as we do with vertex positions.
+	// It works because the inverse is equal to the transpose, and the transposed inverse of matrix M is M itself.
+	// Otherwise, we must multiply transform normals by the transposed inverse of transformMatrix.
+	const Mat4& normalsTransform = transformMatrix.getInverse().getTransposed();
 
 	// Инициализировать z-buffer
 	const size_t pixelsCount = static_cast<size_t>(image.get_width() * image.get_height());
@@ -253,12 +276,10 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		vertex1 = transformMatrix * vertex1;
 		vertex2 = transformMatrix * vertex2;
 
-		// Применить центральную проекцию ко всем вершинам треугольника.
-		/*
-		vertex0 = getCentralProjection(vertex0);
-		vertex1 = getCentralProjection(vertex1);
-		vertex2 = getCentralProjection(vertex2);
-		*/
+		// Transform coordinates from homogeneous to 3D-cartesian ones (make w == 1).
+		const Vec3f v0 = vertex0.xyz() / vertex0.w;
+		const Vec3f v1 = vertex1.xyz() / vertex1.w;
+		const Vec3f v2 = vertex2.xyz() / vertex2.w;
 
 		// Получить нормализованные текстурные координаты.
 		const std::array<int, ModelFace::FACE_VERTEXES_COUNT> tvIndexes = face.getTextureCoordsIndices();
@@ -275,21 +296,18 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		const Vec3f& normal1 = vertexNormals[vnIndexes[1]];
 		const Vec3f& normal2 = vertexNormals[vnIndexes[2]];
 
-		// Пока преобразования аффинные (без перспективных искажений),
-		// можно преобразовывать нормали с помощью той же матрицы transformMatrix.
-		// Иначе надо использовать транспонированную обратную матрицу к transformMatrix.
-		const Vec4 transformedNormal0 = transformMatrix * Vec4(normal0, 0);
-		const Vec4 transformedNormal1 = transformMatrix * Vec4(normal1, 0);
-		const Vec4 transformedNormal2 = transformMatrix * Vec4(normal2, 0);
+		const Vec4 transformedNormal0 = normalsTransform * Vec4(normal0, 0);
+		const Vec4 transformedNormal1 = normalsTransform * Vec4(normal1, 0);
+		const Vec4 transformedNormal2 = normalsTransform * Vec4(normal2, 0);
 		const Vec3f n0 = transformedNormal0.xyz().normalize();
 		const Vec3f n1 = transformedNormal1.xyz().normalize();
 		const Vec3f n2 = transformedNormal2.xyz().normalize();
 
 		drawTriangle(
 				{
-					VertexData(vertex0.xyz().round(), tv0, n0),
-					VertexData(vertex1.xyz().round(), tv1, n1),
-					VertexData(vertex2.xyz().round(), tv2, n2),
+					VertexData(v0.round(), tv0, n0),
+					VertexData(v1.round(), tv1, n1),
+					VertexData(v2.round(), tv2, n2),
 				},
 				zBuffer,
 				image,
@@ -326,10 +344,14 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& tr
 			const int nextVertexGlobalIndex = coordVertexIndexes[nextCoordVertexIndex];
 			const Vec4 nextVertex = transformMatrix * vertexes[nextVertexGlobalIndex];
 
-			const int x0 = (int) std::round(currentVertex.x);
-			const int y0 = (int) std::round(currentVertex.y);
-			const int x1 = (int) std::round(nextVertex.x);
-			const int y1 = (int) std::round(nextVertex.y);
+			// From homogeneous to 3D-cartesian.
+			const Vec3f from = currentVertex.xyz() / currentVertex.w;
+			const Vec3f to = nextVertex.xyz() / nextVertex.w;
+
+			const int x0 = (int) std::round(from.x);
+			const int y0 = (int) std::round(from.y);
+			const int x1 = (int) std::round(to.x);
+			const int y1 = (int) std::round(to.y);
 			drawLine(x0, y0, x1, y1, image, WHITE_COLOR);
 		}
 	}
