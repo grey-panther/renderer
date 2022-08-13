@@ -358,8 +358,15 @@ void drawTriangle(
 				continue;
 			}
 
-			const float t = static_cast<float>(y - vLow.y) / yDiff;
-			const int z = vLow.z + static_cast<int>(std::round(t * zDiff));
+			int z = 0;
+			float t = 0.f;
+			if (yDiff == 0) {
+				t = 1.f;
+				z = std::max(vLow.z, vHigh.z);
+			} else {
+				t = static_cast<float>(y - vLow.y) / yDiff;
+				z = vLow.z + static_cast<int>(std::round(t * zDiff));
+			}
 
 			// Проверить по zBuffer, можно ли рисовать пиксель.
 			if (z > zBuffer[pixelIndex]) {
