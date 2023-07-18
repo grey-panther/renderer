@@ -82,7 +82,7 @@ Mat4 Mat4::getInverse() const
 	Vec3f v = c * w - d * z;
 
 	const float det = Vec3f::dotMultiply(s, v) + Vec3f::dotMultiply(t, u);
-	if (IsEqualFloat(det, 0.f)) {
+	if (isEqualFloat(det, 0.f)) {
 		// The inverse doesn't exist!
 		return {};
 	}
@@ -166,7 +166,7 @@ bool operator==(const Mat4& m1, const Mat4& m2)
 		const auto& rowData1 = m1.data[row];
 		const auto& rowData2 = m2.data[row];
 		for (int column = 0; column < 4; ++column) {
-			if (!IsEqualFloat(rowData1[column], rowData2[column])) {
+			if (!isEqualFloat(rowData1[column], rowData2[column])) {
 				return false;
 			}
 		}

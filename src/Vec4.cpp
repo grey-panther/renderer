@@ -1,4 +1,6 @@
 #include "Vec4.hpp"
+
+#include "Math.hpp"
 #include "Vec3f.hpp"
 
 
@@ -96,4 +98,10 @@ Vec4 operator/(const Vec4& v, float divider)
 	Vec4 result = v;
 	result /= divider;
 	return result;
+}
+
+
+bool operator==(const Vec4& v1, const Vec4& v2)
+{
+	return isEqualFloat(v1.x, v2.x) && isEqualFloat(v1.y, v2.y) && isEqualFloat(v1.z, v2.z) && isEqualFloat(v1.w, v2.w);
 }

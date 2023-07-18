@@ -1,6 +1,8 @@
 #include "MathTests.hpp"
 #include "Mat4.hpp"
+#include "Transform.hpp"
 #include "Utilities.hpp"
+#include "Vec3f.hpp"
 #include "Vec4.hpp"
 #include <iostream>
 
@@ -150,4 +152,85 @@ void testMat4()
 	testMat4Inverse1();
 	testMat4Inverse2();
 	testMat4Inverse3();
+}
+
+
+void testMakeRotation()
+{
+	const float angleStep = PI / 3;
+	for (float angle = 0; angle <= 2 * PI; angle += angleStep) {
+		assert(Transform::makeRotationX(angle) == Transform::makeRotation(angle, Vec3f(1, 0, 0)));
+		assert(Transform::makeRotationY(angle) == Transform::makeRotation(angle, Vec3f(0, 1, 0)));
+		assert(Transform::makeRotationZ(angle) == Transform::makeRotation(angle, Vec3f(0, 0, 1)));
+	}
+
+	const float angle = PI / 5;
+	assert((Transform::makeRotationX(-angle) * Transform::makeRotationX(angle)) == Mat4::identity());
+	assert((Transform::makeRotationY(-angle) * Transform::makeRotationY(angle)) == Mat4::identity());
+	assert((Transform::makeRotationZ(-angle) * Transform::makeRotationZ(angle)) == Mat4::identity());
+}
+
+
+void testMakeScale()
+{
+	const float scale = 42;
+	const auto vector = Vec4(2, 3, 4, 0);
+	const auto point = Vec4(-2, -3, -4, 1);
+
+	// uniform scale
+	{
+		const Mat4 scaleTransform = Transform::makeScale(scale);
+
+		const auto&& scaledVector = scaleTransform * vector;
+		assert(scaledVector == Vec4(vector.x * scale, vector.y * scale, vector.z * scale, 0))
+
+		const auto&& scaledPoint = scaleTransform * point;
+		assert(scaledPoint == Vec4(point.x * scale, point.y * scale, point.z * scale, 1));
+
+		const Mat4 revScaleTransform = Transform::makeScale(1 / scale);
+		assert((scaleTransform * revScaleTransform) == Mat4::identity());
+
+		assert((Transform::makeScale(1.f) * vector) == vector);
+		assert((Transform::makeScale(1.f) * point) == point);
+	}
+
+	// scale along the arbitrary axis
+	{
+		// scale along x, y, z axes.
+		{
+			auto xScale = Transform::makeScale(scale, Vec3f(1, 0, 0));
+			assert((xScale * vector) == Vec4(vector.x * scale, vector.y, vector.z, vector.w));
+			assert((xScale * point) == Vec4(point.x * scale, point.y, point.z, point.w));
+
+			auto yScale = Transform::makeScale(scale, Vec3f(0, 1, 0));
+			assert((yScale * vector) == Vec4(vector.x, vector.y * scale, vector.z, vector.w));
+			assert((yScale * point) == Vec4(point.x, point.y * scale, point.z, point.w));
+
+			auto zScale = Transform::makeScale(scale, Vec3f(0, 0, 1));
+			assert((zScale * vector) == Vec4(vector.x, vector.y, vector.z * scale, vector.w));
+			assert((zScale * point) == Vec4(point.x, point.y, point.z * scale, point.w));
+		}
+
+		// scale along the unit vector
+		{
+			const auto dir = Vec3f(1.f / std::sqrt(2.f), 1.f / std::sqrt(2.f), 0.f);
+			const float s = 3.f;
+			auto&& dirScale = Transform::makeScale(s, dir);
+			assert(dirScale == Mat4(
+					2, 1, 0, 0,
+					1, 2, 0, 0,
+					0, 0, 1, 0,
+					0, 0, 0, 1
+			));
+			assert((dirScale * Vec4(2, 3, 4, 0)) == Vec4(7, 8, 4, 0));
+			assert((dirScale * Vec4(2, 3, 4, 1)) == Vec4(7, 8, 4, 1));
+		}
+	}
+}
+
+
+void testTransforms()
+{
+	testMakeRotation();
+	testMakeScale();
 }

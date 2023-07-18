@@ -2,6 +2,7 @@
 #include "ObjFormatModel.hpp"
 #include "Mat4.hpp"
 #include "MathTests.hpp"
+#include "Transform.hpp"
 #include "Vec3i.hpp"
 #include "Vec4.hpp"
 
@@ -13,7 +14,6 @@ static const TGAColor WHITE_COLOR = TGAColor(255, 255, 255, 255);
 static const TGAColor RED_COLOR = TGAColor(255, 0, 0, 255);
 static const TGAColor GREEN_COLOR = TGAColor(0, 255, 0, 255);
 static const TGAColor BLUE_COLOR = TGAColor(0, 0, 255, 255);
-static const float PI = 3.1415926f;
 
 void drawPlayground(TGAImage& image);
 
@@ -34,6 +34,7 @@ Mat4 getModelTransformMatrix();
 int main()
 {
 	testMat4();
+	testTransforms();
 
 	// Load floor model
 	const ObjFormatModel floorModel("../assets/floor.obj");
@@ -139,22 +140,10 @@ Mat4 getViewportMatrix(int width, int height)
 
 Mat4 getViewMatrix()
 {
-	const float angleY = 0;//- PI / 4;
-	using std::cos;
-	using std::sin;
-	const Mat4 viewRotationY = {
-			cos(angleY),	0,	sin(angleY),	0,
-			0, 				1,	0,				0,
-			-sin(angleY),	0,	cos(angleY),	0,
-			0, 				0,	0,				1,
-	};
-	const float angleX = PI / 8;
-	const Mat4 viewRotationX = {
-			1,	0,				0,				0,
-			0,	cos(angleX),	-sin(angleX),	0,
-			0,	sin(angleX),	cos(angleX),	0,
-			0,	0,				0,				1,
-	};
+	const Mat4 viewRotationX = Transform::makeRotationX(PI / 8); // PI / 8;
+	const Mat4 viewRotationY = Transform::makeRotationY(0.f); // -PI / 4;
+
+	const Mat4 viewScale = Transform::makeScale(0.35f);
 
 	const auto t = Vec3f(0, -0.5, -0.3);
 	const Mat4 viewTranslation = {
@@ -164,50 +153,18 @@ Mat4 getViewMatrix()
 			0, 	0,	0,	1,
 	};
 
-	const float s = 0.35f;
-	const Mat4 viewScale = {
-			s,	0,	0,	0,
-			0, 	s,	0,	0,
-			0,	0,	s,	0,
-			0, 	0,	0,	1,
-	};
 	const Mat4 viewMatrix = viewTranslation * viewScale * viewRotationX * viewRotationY;
-
 	return viewMatrix;
 }
 
 
 Mat4 getModelTransformMatrix()
 {
-	const float angle = PI / 2;
-	using std::cos;
-	using std::sin;
-	const Mat4 rotationMatrixX {
-			1.f,	0.f,		0.f,			0.f,
-			0.f,	cos(angle),	-sin(angle),	0.f,
-			0.f,	sin(angle), cos(angle), 	0.f,
-			0.f,	0.f,		0.f,			1.f,
-	};
-	const Mat4 rotationMatrixY {
-			cos(angle),		0.f,	sin(angle),	0.f,
-			0.f,			1.f,	0.f,		0.f,
-			-sin(angle),	0.f,	cos(angle),	0.f,
-			0.f,			0.f,	0.f,		1.f,
-	};
-	const Mat4 rotationMatrixZ {
-			cos(angle),	-sin(angle),	0.f,	0.f,
-			sin(angle),	cos(angle),		0.f,	0.f,
-			0.f,		0.f,			1.f,	0.f,
-			0.f,		0.f,			0.f,	1.f,
-	};
+	const Mat4 rotationMatrixX = Transform::makeRotationX(0);
+	const Mat4 rotationMatrixY = Transform::makeRotationY(0);
+	const Mat4 rotationMatrixZ = Transform::makeRotationZ(0);
 
-	const float scale = 2.f;
-	const Mat4 scaleMatrix {
-			scale,	0.f,	0.f,	0.f,
-			0.f,	scale,	0.f,	0.f,
-			0.f,	0.f,	scale,	0.f,
-			0.f,	0.f,	0.f,	1.f,
-	};
+	const Mat4 scaleMatrix = Transform::makeScale(2.f);
 
 	// Позиция в мировых координатах - центр image.
 	const Vec3f t { 0.f, 2.f, 0.f};
@@ -222,8 +179,7 @@ Mat4 getModelTransformMatrix()
 	// rotation - first
 	// scale - second
 	// translation - third
-//	const Mat4 transformMatrix = translateMatrix * scaleMatrix * rotationMatrixY;
-	const Mat4 transformMatrix = translateMatrix * scaleMatrix;
+	const Mat4 transformMatrix = translateMatrix * scaleMatrix * rotationMatrixZ * rotationMatrixY * rotationMatrixX;
 	return transformMatrix;
 }
 

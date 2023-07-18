@@ -3,7 +3,7 @@
 #include <cmath>
 
 
-bool IsEqualFloat(float a, float b, float epsilon)
+bool isEqualFloat(float a, float b, float epsilon)
 {
 	if (a == b) {
 		return true;
