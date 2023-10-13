@@ -34,8 +34,8 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 		// v x y z [w]
 		// w is optional and defaults to 1.0.
 		if (label == VERTEX_LABEL) {
-			assert(size >= 4);
-			assert(!faceReadingStarted);
+			assertTrue(size >= 4);
+			assertTrue(!faceReadingStarted);
 			const std::string& x = elements[1];
 			const std::string& y = elements[2];
 			const std::string& z = elements[3];
@@ -49,8 +49,8 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 		// These coordinates vary between 0 and 1.
 		// v, w are optional and default to 0.
 		if (label == TEXTURE_VERTEX_LABEL) {
-			assert(size >= 2);
-			assert(!faceReadingStarted);
+			assertTrue(size >= 2);
+			assertTrue(!faceReadingStarted);
 			const std::string& u = elements[1];
 			const std::string v = (size > 2) ? elements[2] : "0";
 			const std::string w = (size > 3) ? elements[3] : "0";
@@ -62,8 +62,8 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 		// vn x y z
 		// Normals might not be unit vectors.
 		if (label == NORMAL_VERTEX_LABEL) {
-			assert(size >= 4);
-			assert(!faceReadingStarted);
+			assertTrue(size >= 4);
+			assertTrue(!faceReadingStarted);
 			const std::string& x = elements[1];
 			const std::string& y = elements[2];
 			const std::string& z = elements[3];
@@ -77,7 +77,7 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 		// f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3 ...
 		// f v1//vn1 v2//vn2 v3//vn3 ...
 		if (label == FACE_LABEL) {
-			assert(size >= 4);
+			assertTrue(size >= 4);
 			faceReadingStarted = true;
 
 			// It supports only triangles now (only 3 vertices in a face).
@@ -92,7 +92,7 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 
 			for (int i = 0; i < ModelFace::FACE_VERTEXES_COUNT; i++) {
 				const std::vector<std::string> vertexInfo = splitString(elements[i + 1], '/', false);
-				assert(!vertexInfo.empty());	// Expecting at least a coords index.
+				assertTrue(!vertexInfo.empty());	// Expecting at least a coords index.
 
 				if (vertexInfo.size() > 0) {
 					coordsIndices[i] = parseVertexIndex(vertexInfo[0], coordsCount);
@@ -127,7 +127,7 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 
 int ObjFormatModel::parseVertexIndex(const std::string& indexStr, int verticesCount)
 {
-	assert(verticesCount > 0);
+	assertTrue(verticesCount > 0);
 	if (verticesCount <= 0) {
 		return UNDEFINED_INDEX;
 	}
@@ -138,7 +138,7 @@ int ObjFormatModel::parseVertexIndex(const std::string& indexStr, int verticesCo
 
 	int vIndex = stoi(indexStr);
 
-	assert(vIndex != 0);
+	assertTrue(vIndex != 0);
 	if (vIndex == 0) {
 		return UNDEFINED_INDEX;
 	}

@@ -51,7 +51,7 @@ namespace Transform
 
 	Mat4 makeRotation(float angleRadians, const Vec3f& axis)
 	{
-		assert(isEqualFloat(axis.length(), 1.f));
+		assertTrue(isEqualFloat(axis.length(), 1.f));
 
 		const auto& a = axis;
 		const float c = std::cos(angleRadians);
@@ -89,7 +89,7 @@ namespace Transform
 
 	Mat4 makeScale(float scale, const Vec3f& v)
 	{
-		assert(isEqualFloat(v.length(), 1.f));
+		assertTrue(isEqualFloat(v.length(), 1.f));
 
 		const float s = scale - 1;
 		const float s_vx = s * v.x;
