@@ -1,7 +1,7 @@
 #ifndef RENDERER_DRAW_TOOLS_H
 #define RENDERER_DRAW_TOOLS_H
 
-#include "Vec3f.hpp"
+#include "Vec3.hpp"
 #include "Vec3i.hpp"
 #include <tgaimage.h>
 #include <array>
@@ -26,9 +26,9 @@ void drawLineWithDepthMask(
 
 // TODO Deprecated function.
 void drawTriangle(
-		const Vec3f& p1,
-		const Vec3f& p2,
-		const Vec3f& p3,
+		const Vec3& p1,
+		const Vec3& p2,
+		const Vec3& p3,
 		std::vector<int>& zBuffer,
 		TGAImage& image,
 		const TGAColor& color
@@ -36,7 +36,7 @@ void drawTriangle(
 
 struct VertexData
 {
-	VertexData(const Vec3i& coords, const Vec3f& textureCoords, const Vec3f& normal)
+	VertexData(const Vec3i& coords, const Vec3& textureCoords, const Vec3& normal)
 			: coords(coords)
 			, textureCoords(textureCoords)
 			, normal(normal)
@@ -44,15 +44,15 @@ struct VertexData
 
 
 	Vec3i coords;
-	Vec3f textureCoords;
-	Vec3f normal;
+	Vec3 textureCoords;
+	Vec3 normal;
 };
 
 void drawTriangle(
 		std::array<VertexData, 3> vertexes,
 		std::vector<int>& zBuffer,
 		TGAImage& image,
-		const Vec3f& lightVector,
+		const Vec3& lightVector,
 		const TGAImage& texture
 );
 

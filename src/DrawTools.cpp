@@ -134,7 +134,7 @@ public:
 };
 
 
-void sortByX(std::array<Vec3f, 3>& points)
+void sortByX(std::array<Vec3, 3>& points)
 {
 	// Отсортировать точки по x координате
 	int pointsCount = 3;
@@ -149,7 +149,7 @@ void sortByX(std::array<Vec3f, 3>& points)
 		}
 
 		if (minPointIndex != i) {
-			Vec3f buffPoint = points[i];
+			Vec3 buffPoint = points[i];
 			points[i] = points[minPointIndex];
 			points[minPointIndex] = buffPoint;
 		}
@@ -157,10 +157,10 @@ void sortByX(std::array<Vec3f, 3>& points)
 }
 
 
-void drawTriangle(const Vec3f& p1, const Vec3f& p2, const Vec3f& p3, std::vector<int>& zBuffer, TGAImage& image,
+void drawTriangle(const Vec3& p1, const Vec3& p2, const Vec3& p3, std::vector<int>& zBuffer, TGAImage& image,
 				  const TGAColor& color)
 {
-	std::array<Vec3f, 3> points = {p1, p2, p3};
+	std::array<Vec3, 3> points = {p1, p2, p3};
 	sortByX(points);
 
 	int x0 = (int) points[0].x;
@@ -264,7 +264,7 @@ void drawTriangle(
 		std::array<VertexData, 3> vertexes,
 		std::vector<int>& zBuffer,
 		TGAImage& image,
-		const Vec3f& lightVector,
+		const Vec3& lightVector,
 		const TGAImage& texture
 )
 {
@@ -281,21 +281,21 @@ void drawTriangle(
 	const Vec3i v2v3 = v3 - v2;
 	const Vec3i v1v3 = v3 - v1;
 
-	const Vec3f& vt1 = vertexes[0].textureCoords;
-	const Vec3f& vt2 = vertexes[1].textureCoords;
-	const Vec3f& vt3 = vertexes[2].textureCoords;
+	const Vec3& vt1 = vertexes[0].textureCoords;
+	const Vec3& vt2 = vertexes[1].textureCoords;
+	const Vec3& vt3 = vertexes[2].textureCoords;
 
-	const Vec3f vt1vt2 = vt2 - vt1;
-	const Vec3f vt2vt3 = vt3 - vt2;
-	const Vec3f vt1vt3 = vt3 - vt1;
+	const Vec3 vt1vt2 = vt2 - vt1;
+	const Vec3 vt2vt3 = vt3 - vt2;
+	const Vec3 vt1vt3 = vt3 - vt1;
 
-	const Vec3f& vn1 = vertexes[0].normal;
-	const Vec3f& vn2 = vertexes[1].normal;
-	const Vec3f& vn3 = vertexes[2].normal;
+	const Vec3& vn1 = vertexes[0].normal;
+	const Vec3& vn2 = vertexes[1].normal;
+	const Vec3& vn3 = vertexes[2].normal;
 
-	const Vec3f vn1vn2 = vn2 - vn1;
-	const Vec3f vn2vn3 = vn3 - vn2;
-	const Vec3f vn1vn3 = vn3 - vn1;
+	const Vec3 vn1vn2 = vn2 - vn1;
+	const Vec3 vn2vn3 = vn3 - vn2;
+	const Vec3 vn1vn3 = vn3 - vn1;
 
 	// Чтобы не выполнять деление в цикле, заранее посчитать обратную величину для v1v3.x.
 	const float inverseV1V3X = 1.0f / v1v3.x;
@@ -320,8 +320,8 @@ void drawTriangle(
 
 		// Аналогично определить точку на левой (v1v2) или правой (v2v3) малой стороне треугольника.
 		Vec3i v;
-		Vec3f vt;
-		Vec3f vn;
+		Vec3 vt;
+		Vec3 vn;
 		if (isLeft) {
 			const float leftEdgeProgress = static_cast<float>(x - v1.x) / v1v2.x;
 			v = v1 + leftEdgeProgress * v1v2;
@@ -343,10 +343,10 @@ void drawTriangle(
 		// Закрасить вертикальный отрезок от vLow.y до vHigh.y.
 		const Vec3i& vLow = drawingVertex1.coords;
 		const Vec3i& vHigh = drawingVertex2.coords;
-		const Vec3f& uv1 = drawingVertex1.textureCoords;
-		const Vec3f& uv2 = drawingVertex2.textureCoords;
-		const Vec3f& n1 = drawingVertex1.normal;
-		const Vec3f& n2 = drawingVertex2.normal;
+		const Vec3& uv1 = drawingVertex1.textureCoords;
+		const Vec3& uv2 = drawingVertex2.textureCoords;
+		const Vec3& n1 = drawingVertex1.normal;
+		const Vec3& n2 = drawingVertex2.normal;
 		const int yDiff = vHigh.y - vLow.y;
 		const int zDiff = vHigh.z - vLow.z;
 		int pixelIndex = vLow.y * image.get_width() + x;
@@ -372,8 +372,8 @@ void drawTriangle(
 			if (z > zBuffer[pixelIndex]) {
 
 				// Определить интенсивность цвета в данной точке треугольника.
-				const Vec3f normal = (n1 + t * (n2 - n1)).normalize();
-				const float colorIntensity = Vec3f::dotMultiply(normal, lightVector);
+				const Vec3 normal = (n1 + t * (n2 - n1)).normalize();
+				const float colorIntensity = Vec3::dotMultiply(normal, lightVector);
 				if (colorIntensity < 0) {
 					// Отсечение невидимой точки.
 					// Невидимую точку не записывать в z буффер, а то она может оказаться самой ближней
@@ -384,7 +384,7 @@ void drawTriangle(
 				zBuffer[pixelIndex] = z;
 
 				// Вычислить uv-координаты для данной точки треугольника.
-				const Vec3f uv = uv1 + t * (uv2 - uv1);
+				const Vec3 uv = uv1 + t * (uv2 - uv1);
 
 				// Взять из текстуры цвет по полученным uv координатам.
 				const int u = static_cast<int>(std::round(uv.x * texture.get_width()));

@@ -19,7 +19,7 @@ public:
 			, w(w)
 	{}
 
-	Vec4(const Vec3f& vec3, float w);
+	Vec4(const Vec3& vec3, float w);
 
 	Vec4& operator*=(float multiplier);
 
@@ -31,7 +31,7 @@ public:
 
 	Vec4& operator-=(const Vec4& other);
 
-	Vec3f xyz() const;
+	Vec3 xyz() const;
 };
 
 Vec4 operator+(const Vec4& v1, const Vec4& v2);

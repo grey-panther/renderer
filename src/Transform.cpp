@@ -1,6 +1,6 @@
 #include "Transform.hpp"
 
-#include "Vec3f.hpp"
+#include "Vec3.hpp"
 #include "Mat4.hpp"
 #include "Utilities.hpp"
 
@@ -49,7 +49,7 @@ namespace Transform
 	}
 
 
-	Mat4 makeRotation(float angleRadians, const Vec3f& axis)
+	Mat4 makeRotation(float angleRadians, const Vec3& axis)
 	{
 		assertTrue(isEqualFloat(axis.length(), 1.f));
 
@@ -87,7 +87,7 @@ namespace Transform
 	}
 
 
-	Mat4 makeScale(float scale, const Vec3f& v)
+	Mat4 makeScale(float scale, const Vec3& v)
 	{
 		assertTrue(isEqualFloat(v.length(), 1.f));
 
@@ -108,7 +108,7 @@ namespace Transform
 	}
 
 
-	Mat4 makeTranslation(const Vec3f& v)
+	Mat4 makeTranslation(const Vec3& v)
 	{
 		Mat4 result = {
 				1.f, 0.f, 0.f, v.x,

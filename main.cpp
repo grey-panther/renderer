@@ -89,9 +89,9 @@ void drawPlayground(TGAImage& image)
 //	drawTriangle(p1, p2, p3, {}, image, WHITE_COLOR);
 //	drawTriangle(p3, p1, Vec3i(210, 80), {}, image, GREEN_COLOR);
 
-	Vec3f p4(180, 50, 0);
-	Vec3f p5(150, 1, 0);
-	Vec3f p6(70, 180, 0);
+	Vec3 p4(180, 50, 0);
+	Vec3 p5(150, 1, 0);
+	Vec3 p6(70, 180, 0);
 //	drawTriangle(p4, p5, p6, image, WHITE_COLOR);
 }
 
@@ -143,7 +143,7 @@ Mat4 getViewMatrix()
 	const Mat4 viewRotationX = Transform::makeRotationX(PI / 8); // PI / 8;
 	const Mat4 viewRotationY = Transform::makeRotationY(0.f); // -PI / 4;
 	const Mat4 viewScale = Transform::makeScale(0.35f);
-	const Mat4 viewTranslation = Transform::makeTranslation(Vec3f(0.f, -0.5f, -0.3f));
+	const Mat4 viewTranslation = Transform::makeTranslation(Vec3(0.f, -0.5f, -0.3f));
 
 	const Mat4 viewMatrix = viewTranslation * viewScale * viewRotationX * viewRotationY;
 	return viewMatrix;
@@ -159,7 +159,7 @@ Mat4 getModelTransformMatrix()
 	const Mat4 scaleMatrix = Transform::makeScale(2.f);
 
 	// Позиция в мировых координатах - центр image.
-	const Vec3f t { 0.f, 2.f, 0.f};
+	const Vec3 t {0.f, 2.f, 0.f};
 	const Mat4 translationMatrix = Transform::makeTranslation(t);
 
 	// Next transformations are applied in order from right to left:
@@ -194,7 +194,7 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 	const std::vector<Vec4>& coords = model.getCoords();
 	const std::vector<ModelFace>& faces = model.getFaces();
 
-	const Vec3f lightVector(0, 0, 1);
+	const Vec3 lightVector(0, 0, 1);
 
 	// When we use only affine transformations (without perspective distortions),
 	// we can transform normals multiplying them by the transformMatrix as we do with vertex positions.
@@ -220,31 +220,31 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		vertex2 = transformMatrix * vertex2;
 
 		// Transform coordinates from homogeneous to 3D-cartesian ones (make w == 1).
-		const Vec3f v0 = vertex0.xyz() / vertex0.w;
-		const Vec3f v1 = vertex1.xyz() / vertex1.w;
-		const Vec3f v2 = vertex2.xyz() / vertex2.w;
+		const Vec3 v0 = vertex0.xyz() / vertex0.w;
+		const Vec3 v1 = vertex1.xyz() / vertex1.w;
+		const Vec3 v2 = vertex2.xyz() / vertex2.w;
 
 		// Получить нормализованные текстурные координаты.
 		const std::array<int, ModelFace::FACE_VERTEXES_COUNT> tvIndexes = face.getTextureCoordsIndices();
-		const std::vector<Vec3f>& textureVertexes = model.getTextureCoords();
-		const Vec3f& tv0 = textureVertexes[tvIndexes[0]];
-		const Vec3f& tv1 = textureVertexes[tvIndexes[1]];
-		const Vec3f& tv2 = textureVertexes[tvIndexes[2]];
+		const std::vector<Vec3>& textureVertexes = model.getTextureCoords();
+		const Vec3& tv0 = textureVertexes[tvIndexes[0]];
+		const Vec3& tv1 = textureVertexes[tvIndexes[1]];
+		const Vec3& tv2 = textureVertexes[tvIndexes[2]];
 
 		// Получить нормали к каждой из вершин.
 		const ModelFace::Indices& vnIndexes = face.getNormalsIndices();
-		const std::vector<Vec3f>& vertexNormals = model.getNormals();
+		const std::vector<Vec3>& vertexNormals = model.getNormals();
 		// TODO Посчитать нормальные векторы, если vertexNormals пуст. Или как-то по-другому обработать, чтобы не падало
-		const Vec3f& normal0 = vertexNormals[vnIndexes[0]];
-		const Vec3f& normal1 = vertexNormals[vnIndexes[1]];
-		const Vec3f& normal2 = vertexNormals[vnIndexes[2]];
+		const Vec3& normal0 = vertexNormals[vnIndexes[0]];
+		const Vec3& normal1 = vertexNormals[vnIndexes[1]];
+		const Vec3& normal2 = vertexNormals[vnIndexes[2]];
 
 		const Vec4 transformedNormal0 = normalsTransform * Vec4(normal0, 0);
 		const Vec4 transformedNormal1 = normalsTransform * Vec4(normal1, 0);
 		const Vec4 transformedNormal2 = normalsTransform * Vec4(normal2, 0);
-		const Vec3f n0 = transformedNormal0.xyz().normalize();
-		const Vec3f n1 = transformedNormal1.xyz().normalize();
-		const Vec3f n2 = transformedNormal2.xyz().normalize();
+		const Vec3 n0 = transformedNormal0.xyz().normalize();
+		const Vec3 n1 = transformedNormal1.xyz().normalize();
+		const Vec3 n2 = transformedNormal2.xyz().normalize();
 
 		drawTriangle(
 				{
@@ -288,8 +288,8 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& tr
 			const Vec4 nextVertex = transformMatrix * vertexes[nextVertexGlobalIndex];
 
 			// From homogeneous to 3D-cartesian.
-			const Vec3f from = currentVertex.xyz() / currentVertex.w;
-			const Vec3f to = nextVertex.xyz() / nextVertex.w;
+			const Vec3 from = currentVertex.xyz() / currentVertex.w;
+			const Vec3 to = nextVertex.xyz() / nextVertex.w;
 
 			const int x0 = (int) std::round(from.x);
 			const int y0 = (int) std::round(from.y);

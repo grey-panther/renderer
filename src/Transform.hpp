@@ -15,7 +15,7 @@ namespace Transform
 	Mat4 makeRotationZ(float angleRadians);
 
 	[[nodiscard]]
-	Mat4 makeRotation(float angleRadians, const Vec3f& axis);
+	Mat4 makeRotation(float angleRadians, const Vec3& axis);
 
 	// Make uniform scale.
 	[[nodiscard]]
@@ -23,8 +23,8 @@ namespace Transform
 
 	// Make scale along unit-vector v.
 	[[nodiscard]]
-	Mat4 makeScale(float scale, const Vec3f& v);
+	Mat4 makeScale(float scale, const Vec3& v);
 
 	[[nodiscard]]
-	Mat4 makeTranslation(const Vec3f& v);
+	Mat4 makeTranslation(const Vec3& v);
 }

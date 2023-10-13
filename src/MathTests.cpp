@@ -2,7 +2,7 @@
 #include "Mat4.hpp"
 #include "Transform.hpp"
 #include "Utilities.hpp"
-#include "Vec3f.hpp"
+#include "Vec3.hpp"
 #include "Vec4.hpp"
 #include <iostream>
 
@@ -159,9 +159,9 @@ void testMakeRotation()
 {
 	const float angleStep = PI / 3;
 	for (float angle = 0; angle <= 2 * PI; angle += angleStep) {
-		assertTrue(Transform::makeRotationX(angle) == Transform::makeRotation(angle, Vec3f(1, 0, 0)));
-		assertTrue(Transform::makeRotationY(angle) == Transform::makeRotation(angle, Vec3f(0, 1, 0)));
-		assertTrue(Transform::makeRotationZ(angle) == Transform::makeRotation(angle, Vec3f(0, 0, 1)));
+		assertTrue(Transform::makeRotationX(angle) == Transform::makeRotation(angle, Vec3(1, 0, 0)));
+		assertTrue(Transform::makeRotationY(angle) == Transform::makeRotation(angle, Vec3(0, 1, 0)));
+		assertTrue(Transform::makeRotationZ(angle) == Transform::makeRotation(angle, Vec3(0, 0, 1)));
 	}
 
 	const float angle = PI / 5;
@@ -198,22 +198,22 @@ void testMakeScale()
 	{
 		// scale along x, y, z axes.
 		{
-			auto xScale = Transform::makeScale(scale, Vec3f(1, 0, 0));
+			auto xScale = Transform::makeScale(scale, Vec3(1, 0, 0));
 			assertTrue((xScale * vector) == Vec4(vector.x * scale, vector.y, vector.z, vector.w));
 			assertTrue((xScale * point) == Vec4(point.x * scale, point.y, point.z, point.w));
 
-			auto yScale = Transform::makeScale(scale, Vec3f(0, 1, 0));
+			auto yScale = Transform::makeScale(scale, Vec3(0, 1, 0));
 			assertTrue((yScale * vector) == Vec4(vector.x, vector.y * scale, vector.z, vector.w));
 			assertTrue((yScale * point) == Vec4(point.x, point.y * scale, point.z, point.w));
 
-			auto zScale = Transform::makeScale(scale, Vec3f(0, 0, 1));
+			auto zScale = Transform::makeScale(scale, Vec3(0, 0, 1));
 			assertTrue((zScale * vector) == Vec4(vector.x, vector.y, vector.z * scale, vector.w));
 			assertTrue((zScale * point) == Vec4(point.x, point.y, point.z * scale, point.w));
 		}
 
 		// scale along the unit vector
 		{
-			const auto dir = Vec3f(1.f / std::sqrt(2.f), 1.f / std::sqrt(2.f), 0.f);
+			const auto dir = Vec3(1.f / std::sqrt(2.f), 1.f / std::sqrt(2.f), 0.f);
 			const float s = 3.f;
 			auto&& dirScale = Transform::makeScale(s, dir);
 			assertTrue(dirScale == Mat4(
@@ -233,7 +233,7 @@ void testMakeTranslation()
 {
 	// zero translation
 	{
-		const Mat4 translation = Transform::makeTranslation(Vec3f(0.f, 0.f, 0.f));
+		const Mat4 translation = Transform::makeTranslation(Vec3(0.f, 0.f, 0.f));
 		assertTrue(translation == Mat4::identity());
 
 		const auto pos = Vec4(12.f, 2.f, 10.f, 1.f);
@@ -244,8 +244,8 @@ void testMakeTranslation()
 
 	// 3-axes translation for position vector
 	{
-		const Mat4 forwardTranslation= Transform::makeTranslation(Vec3f(1.f, 1.f, 1.f));
-		const Mat4 backwardTranslation= Transform::makeTranslation(Vec3f(-1.f, -1.f, -1.f));
+		const Mat4 forwardTranslation= Transform::makeTranslation(Vec3(1.f, 1.f, 1.f));
+		const Mat4 backwardTranslation= Transform::makeTranslation(Vec3(-1.f, -1.f, -1.f));
 
 		const auto pos = Vec4(12.f, 2.f, 10.f, 1.f);
 		const auto fwdPos = forwardTranslation * pos;
@@ -257,8 +257,8 @@ void testMakeTranslation()
 
 	// 3-axes translation for direction vector
 	{
-		const Mat4 forwardTranslation= Transform::makeTranslation(Vec3f(1.f, 1.f, 1.f));
-		const Mat4 backwardTranslation= Transform::makeTranslation(Vec3f(-1.f, -1.f, -1.f));
+		const Mat4 forwardTranslation= Transform::makeTranslation(Vec3(1.f, 1.f, 1.f));
+		const Mat4 backwardTranslation= Transform::makeTranslation(Vec3(-1.f, -1.f, -1.f));
 
 		const auto pos = Vec4(12.f, 2.f, 10.f, 0.f);
 		const auto fwdPos = forwardTranslation * pos;
@@ -271,7 +271,7 @@ void testMakeTranslation()
 
 	// translation cancelling
 	{
-		const Vec3f v = Vec3f(3.f, 5.f, -10.f);
+		const Vec3 v = Vec3(3.f, 5.f, -10.f);
 		const Mat4 forwardTranslation= Transform::makeTranslation(v);
 		const Mat4 backwardTranslation= Transform::makeTranslation(-1.f * v);
 

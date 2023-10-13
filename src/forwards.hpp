@@ -4,7 +4,7 @@ struct Vec3i;
 
 struct Vec2i;
 
-struct Vec3f;
+struct Vec3;
 
 struct Vec4;
 

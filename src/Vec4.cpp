@@ -1,10 +1,10 @@
 #include "Vec4.hpp"
 
 #include "Math.hpp"
-#include "Vec3f.hpp"
+#include "Vec3.hpp"
 
 
-Vec4::Vec4(const Vec3f& v, float w)
+Vec4::Vec4(const Vec3& v, float w)
 		: x(v.x)
 		, y(v.y)
 		, z(v.z)
@@ -63,9 +63,9 @@ Vec4& Vec4::operator-=(const Vec4& other)
 }
 
 
-Vec3f Vec4::xyz() const
+Vec3 Vec4::xyz() const
 {
-	return Vec3f(x, y, z);
+	return Vec3(x, y, z);
 }
 
 

@@ -1,7 +1,7 @@
 #ifndef RENDERER_VEC3I_HPP
 #define RENDERER_VEC3I_HPP
 
-#include "Vec3f.hpp"
+#include "Vec3.hpp"
 #include "Vec2i.hpp"
 
 
@@ -20,7 +20,7 @@ public:
 
 	Vec3i(const Vec3i& other) = default;
 
-	explicit Vec3i(const Vec3f& point)
+	explicit Vec3i(const Vec3& point)
 			: x(static_cast<int>(std::round(point.x)))
 			, y(static_cast<int>(std::round(point.y)))
 			, z(static_cast<int>(std::round(point.z)))

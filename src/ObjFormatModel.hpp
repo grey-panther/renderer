@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vec3f.hpp"
+#include "Vec3.hpp"
 #include "Vec4.hpp"
 #include "ModelFace.h"
 
@@ -22,8 +22,8 @@ private:
 	static constexpr int UNDEFINED_INDEX = -1;
 
 	std::vector<Vec4> _coords;			///< Vertex coords in model space.
-	std::vector<Vec3f> _textureCoords;
-	std::vector<Vec3f> _normals;		///< Normals to vertices. Might not be unit vectors.
+	std::vector<Vec3> _textureCoords;
+	std::vector<Vec3> _normals;			///< Normals to vertices. Might not be unit vectors.
 	std::vector<ModelFace> _faces;
 
 public:
@@ -41,13 +41,13 @@ public:
 	}
 
 	[[nodiscard]]
-	inline const std::vector<Vec3f>& getTextureCoords() const
+	inline const std::vector<Vec3>& getTextureCoords() const
 	{
 		return _textureCoords;
 	}
 
 	[[nodiscard]]
-	inline const std::vector<Vec3f>& getNormals() const
+	inline const std::vector<Vec3>& getNormals() const
 	{
 		return _normals;
 	}

@@ -54,7 +54,7 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 			const std::string& u = elements[1];
 			const std::string v = (size > 2) ? elements[2] : "0";
 			const std::string w = (size > 3) ? elements[3] : "0";
-			Vec3f coords(stof(u), stof(v), stof(w));
+			Vec3 coords(stof(u), stof(v), stof(w));
 			_textureCoords.push_back(coords);
 		}
 
@@ -67,7 +67,7 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 			const std::string& x = elements[1];
 			const std::string& y = elements[2];
 			const std::string& z = elements[3];
-			const Vec3f normal(stof(x), stof(y), stof(z));
+			const Vec3 normal(stof(x), stof(y), stof(z));
 			_normals.push_back(normal);
 		}
 
