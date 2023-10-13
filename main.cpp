@@ -80,9 +80,9 @@ int main()
 // Упражнения из статей 1-3.
 void drawPlayground(TGAImage& image)
 {
-	const Vec3i p1(180, 50);
-	const Vec3i p2(150, 1);
-	const Vec3i p3(70, 180);
+	const Vec3i p1(180, 50, 0);
+	const Vec3i p2(150, 1, 0);
+	const Vec3i p3(70, 180, 0);
 	drawLine(p1.xy(), p2.xy(), image, RED_COLOR);
 	drawLine(p1.xy(), p3.xy(), image, RED_COLOR);
 	drawLine(p2.xy(), p3.xy(), image, RED_COLOR);

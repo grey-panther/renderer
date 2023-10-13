@@ -7,13 +7,18 @@
 struct Vec3
 {
 public:
-	float x, y, z;
+	Vec3() = default;
 
-public:
-	explicit Vec3(float x = 0, float y = 0, float z = 0)
+	Vec3(float x, float y, float z)
 			: x(x)
 			, y(y)
 			, z(z)
+	{}
+
+	explicit Vec3(float scalar)
+			: x(scalar)
+			, y(scalar)
+			, z(scalar)
 	{}
 
 	Vec3& operator*=(float multiplier);
@@ -28,8 +33,10 @@ public:
 
 	Vec3& normalize();
 
+	[[nodiscard]]
 	float length() const;
 
+	[[nodiscard]]
 	Vec3i round() const;
 
 	static float distance(const Vec3& p0, const Vec3& p1);
@@ -43,6 +50,11 @@ public:
 	 * @brief Скалярное произведение.
 	 */
 	static float dotMultiply(const Vec3& a, const Vec3& b);
+
+public:
+	float x = 0.f;
+	float y = 0.f;
+	float z = 0.f;
 };
 
 Vec3 operator+(const Vec3& v1, const Vec3& v2);

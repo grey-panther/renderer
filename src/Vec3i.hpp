@@ -1,5 +1,4 @@
-#ifndef RENDERER_VEC3I_HPP
-#define RENDERER_VEC3I_HPP
+#pragma once
 
 #include "Vec3.hpp"
 #include "Vec2i.hpp"
@@ -8,17 +7,19 @@
 struct Vec3i
 {
 public:
-	int x;
-	int y;
-	int z;
+	Vec3i() = default;
 
-	explicit Vec3i(int x = 0, int y = 0, int z = 0)
+	Vec3i(int x, int y, int z)
 			: x(x)
 			, y(y)
 			, z(z)
 	{}
 
-	Vec3i(const Vec3i& other) = default;
+	explicit Vec3i(int scalar)
+			: x(scalar)
+			, y(scalar)
+			, z(scalar)
+	{}
 
 	explicit Vec3i(const Vec3& point)
 			: x(static_cast<int>(std::round(point.x)))
@@ -26,12 +27,13 @@ public:
 			, z(static_cast<int>(std::round(point.z)))
 	{}
 
-	Vec3i& operator=(const Vec3i& other) = default;
-
+	[[nodiscard]]
 	Vec2i xy() const { return Vec2i(x, y); }
 
+	[[nodiscard]]
 	Vec2i xz() const { return Vec2i(x, z); }
 
+	[[nodiscard]]
 	Vec2i yz() const { return Vec2i(y, z); }
 
 	Vec3i& operator-=(const Vec3i& other)
@@ -65,6 +67,11 @@ public:
 		z = static_cast<int>(std::round(z * multiplier));
 		return *this;
 	}
+
+public:
+	int x = 0;
+	int y = 0;
+	int z = 0;
 };
 
 Vec3i operator-(const Vec3i& v1, const Vec3i& v2);
@@ -78,5 +85,3 @@ Vec3i operator*(int multiplier, Vec3i v);
 Vec3i operator*(Vec3i v, float multiplier);
 
 Vec3i operator*(float multiplier, Vec3i v);
-
-#endif
