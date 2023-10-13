@@ -106,4 +106,16 @@ namespace Transform
 				0					, 0					, 0					, 1,
 		};
 	}
+
+
+	Mat4 makeTranslation(const Vec3f& v)
+	{
+		Mat4 result = {
+				1.f, 0.f, 0.f, v.x,
+				0.f, 1.f, 0.f, v.y,
+				0.f, 0.f, 1.f, v.z,
+				0.f, 0.f, 0.f, 1.f
+		};
+		return result;
+	}
 }

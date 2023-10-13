@@ -24,4 +24,7 @@ namespace Transform
 	// Make scale along unit-vector v.
 	[[nodiscard]]
 	Mat4 makeScale(float scale, const Vec3f& v);
+
+	[[nodiscard]]
+	Mat4 makeTranslation(const Vec3f& v);
 }

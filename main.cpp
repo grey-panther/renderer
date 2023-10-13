@@ -142,16 +142,8 @@ Mat4 getViewMatrix()
 {
 	const Mat4 viewRotationX = Transform::makeRotationX(PI / 8); // PI / 8;
 	const Mat4 viewRotationY = Transform::makeRotationY(0.f); // -PI / 4;
-
 	const Mat4 viewScale = Transform::makeScale(0.35f);
-
-	const auto t = Vec3f(0, -0.5, -0.3);
-	const Mat4 viewTranslation = {
-			1,	0,	0,	t.x,
-			0,	1,	0,	t.y,
-			0,	0,	1,	t.z,
-			0, 	0,	0,	1,
-	};
+	const Mat4 viewTranslation = Transform::makeTranslation(Vec3f(0.f, -0.5f, -0.3f));
 
 	const Mat4 viewMatrix = viewTranslation * viewScale * viewRotationX * viewRotationY;
 	return viewMatrix;
@@ -168,18 +160,13 @@ Mat4 getModelTransformMatrix()
 
 	// Позиция в мировых координатах - центр image.
 	const Vec3f t { 0.f, 2.f, 0.f};
-	const Mat4 translateMatrix {
-			1, 0, 0, t.x,
-			0, 1, 0, t.y,
-			0, 0, 1, t.z,
-			0, 0, 0, 1,
-	};
+	const Mat4 translationMatrix = Transform::makeTranslation(t);
 
 	// Next transformations are applied in order from right to left:
 	// rotation - first
 	// scale - second
 	// translation - third
-	const Mat4 transformMatrix = translateMatrix * scaleMatrix * rotationMatrixZ * rotationMatrixY * rotationMatrixX;
+	const Mat4 transformMatrix = translationMatrix * scaleMatrix * rotationMatrixZ * rotationMatrixY * rotationMatrixX;
 	return transformMatrix;
 }
 

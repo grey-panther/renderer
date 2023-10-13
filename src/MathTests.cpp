@@ -182,7 +182,7 @@ void testMakeScale()
 		const Mat4 scaleTransform = Transform::makeScale(scale);
 
 		const auto&& scaledVector = scaleTransform * vector;
-		assert(scaledVector == Vec4(vector.x * scale, vector.y * scale, vector.z * scale, 0))
+		assert(scaledVector == Vec4(vector.x * scale, vector.y * scale, vector.z * scale, 0));
 
 		const auto&& scaledPoint = scaleTransform * point;
 		assert(scaledPoint == Vec4(point.x * scale, point.y * scale, point.z * scale, 1));
@@ -229,8 +229,61 @@ void testMakeScale()
 }
 
 
+void testMakeTranslation()
+{
+	// zero translation
+	{
+		const Mat4 translation = Transform::makeTranslation(Vec3f(0.f, 0.f, 0.f));
+		assert(translation == Mat4::identity());
+
+		const auto pos = Vec4(12.f, 2.f, 10.f, 1.f);
+		const auto translatedPos = translation * pos;
+
+		assert(pos == translatedPos);
+	}
+
+	// 3-axes translation for position vector
+	{
+		const Mat4 forwardTranslation= Transform::makeTranslation(Vec3f(1.f, 1.f, 1.f));
+		const Mat4 backwardTranslation= Transform::makeTranslation(Vec3f(-1.f, -1.f, -1.f));
+
+		const auto pos = Vec4(12.f, 2.f, 10.f, 1.f);
+		const auto fwdPos = forwardTranslation * pos;
+		const auto bwdPos = backwardTranslation * pos;
+
+		assert(fwdPos == Vec4(13.f, 3.f, 11.f, 1.f));
+		assert(bwdPos == Vec4(11.f, 1.f, 9.f, 1.f));
+	}
+
+	// 3-axes translation for direction vector
+	{
+		const Mat4 forwardTranslation= Transform::makeTranslation(Vec3f(1.f, 1.f, 1.f));
+		const Mat4 backwardTranslation= Transform::makeTranslation(Vec3f(-1.f, -1.f, -1.f));
+
+		const auto pos = Vec4(12.f, 2.f, 10.f, 0.f);
+		const auto fwdPos = forwardTranslation * pos;
+		const auto bwdPos = backwardTranslation * pos;
+
+		// Direction vectors are not affected by translation.
+		assert(fwdPos == pos);
+		assert(bwdPos == pos);
+	}
+
+	// translation cancelling
+	{
+		const Vec3f v = Vec3f(3.f, 5.f, -10.f);
+		const Mat4 forwardTranslation= Transform::makeTranslation(v);
+		const Mat4 backwardTranslation= Transform::makeTranslation(-1.f * v);
+
+		assert(forwardTranslation * backwardTranslation == Mat4::identity());
+		assert(backwardTranslation * forwardTranslation == Mat4::identity());
+	}
+}
+
+
 void testTransforms()
 {
 	testMakeRotation();
 	testMakeScale();
+	testMakeTranslation();
 }
