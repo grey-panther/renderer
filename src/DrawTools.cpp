@@ -260,6 +260,44 @@ void drawLineWithDepthMask(int x0, int y0, int z0, int x1, int y1, int z1, std::
 }
 
 
+// Return true if the fragment was drawn.
+// Return false if the fragment wasn't drawn and should not affect z-buffer.
+bool computeFragment(
+		const VertexData& fragmentData,
+		TGAImage& outImage,
+		const Vec3& lightVector,
+		const TGAImage& texture
+)
+{
+	// Calculate the light intensity on the fragment.
+	// A normal vector may become a non-unit vector after fragment interpolation.
+	const Vec3& normal = fragmentData.normal.normalized();
+	const float lightIntensity = Vec3::dotMultiply(normal, lightVector);
+
+	if (lightIntensity < 0) {
+		// Discard an invisible fragment.
+		// The discarded fragment won't be set in z-buffer so as not to overlap another,
+		// possibly more distant, but visible fragment.
+		return false;
+	}
+
+	// Get the color from the texture using the calculated uv-coordinates.
+	const Vec3 uv = fragmentData.textureCoords;
+	const int u = static_cast<int>(std::round(uv.x * texture.get_width()));
+	const int v = static_cast<int>(std::round(uv.y * texture.get_height()));
+	const TGAColor textureColor = texture.get(u, v);
+
+	// Shade the color according to the calculated light intensity.
+	const auto r = static_cast<unsigned char>(textureColor.r * lightIntensity);
+	const auto g = static_cast<unsigned char>(textureColor.g * lightIntensity);
+	const auto b = static_cast<unsigned char>(textureColor.b * lightIntensity);
+
+	outImage.set(fragmentData.coords.x, fragmentData.coords.y, TGAColor(r, g, b, 255));
+
+	return true;
+}
+
+
 void drawTriangle(
 		std::array<VertexData, 3> vertexes,
 		std::vector<int>& zBuffer,
@@ -368,72 +406,21 @@ void drawTriangle(
 				z = vLow.z + static_cast<int>(std::round(t * zDiff));
 			}
 
-			// Проверить по zBuffer, можно ли рисовать пиксель.
+			// Check by z-buffer whether we can draw the fragment (the pixel) or not.
 			if (z > zBuffer[pixelIndex]) {
+				VertexData fragmentData;
+				// Set pixel coordinates in the output image space.
+				fragmentData.coords = Vec3i(x, y, z);
+				// Calculate the normal vector for the current fragment.
+				fragmentData.normal = n1 + t * (n2 - n1);
+				// Calculate uv-coordinates for the current fragment in the [0; 1] interval.
+				fragmentData.textureCoords = uv1 + t * (uv2 - uv1);
 
-				// Определить интенсивность цвета в данной точке треугольника.
-				const Vec3 normal = (n1 + t * (n2 - n1)).normalize();
-				const float colorIntensity = Vec3::dotMultiply(normal, lightVector);
-				if (colorIntensity < 0) {
-					// Отсечение невидимой точки.
-					// Невидимую точку не записывать в z буффер, а то она может оказаться самой ближней
-					// и не дать нарисовать другую точку позади себя.
-					continue;
+				const bool needUpdateZBuffer = computeFragment(fragmentData, image, lightVector, texture);
+				if (needUpdateZBuffer) {
+					zBuffer[pixelIndex] = z;
 				}
-
-				zBuffer[pixelIndex] = z;
-
-				// Вычислить uv-координаты для данной точки треугольника.
-				const Vec3 uv = uv1 + t * (uv2 - uv1);
-
-				// Взять из текстуры цвет по полученным uv координатам.
-				const int u = static_cast<int>(std::round(uv.x * texture.get_width()));
-				const int v = static_cast<int>(std::round(uv.y * texture.get_height()));
-				const TGAColor textureColor = texture.get(u, v);
-
-				// Скорректировать цвета в зависимости от освещённости точки.
-				const auto r = static_cast<unsigned char>(textureColor.r * colorIntensity);
-				const auto g = static_cast<unsigned char>(textureColor.g * colorIntensity);
-				const auto b = static_cast<unsigned char>(textureColor.b * colorIntensity);
-
-				image.set(x, y, TGAColor(r, g, b, 255));
 			}
 		}
 	}
-//	for (int x = v1.x; x <= v3.x; ++x) {
-//		if (x == v2.x) {
-//			if (v2.x == v3.x) {
-//				// Выйти, иначе будет деление на 0 при вычислении errDiff и позднее - бесконечный цикл.
-//				return;
-//			}
-//			// Задать значения для рисования правой части треугольника.
-//			yIncrease = v3.y > v2.y;
-//			errDiff = 1.0f / (v3.x - v2.x) * std::abs(v3.y - v2.y);
-//			err = 0;
-//			y = v2.y;
-//		}
-//
-//		// Закрасить вертикальный отрезок от yMin до yMax.
-//		int yMin = std::min(yCommon, y);
-//		int yMax = std::max(yCommon, y);
-//		for (int yy = yMin; yy <= yMax; ++yy) {
-//			const std::size_t pixelIndex = static_cast<std::size_t>(yy * image.get_width() + x);
-//
-//			image.set(x, yy, color);
-//		}
-//
-//		// Вычислить y общей стороны треугольника (v1_v3).
-//		errCommon += errCommonDiff;
-//		while (errCommon >= 0.5f) {
-//			errCommon -= 1.0f;
-//			yCommon += yCommonIncrease ? 1 : -1;
-//		}
-//
-//		// Вычислить y левой (v1_v2) или правой (v2_v3) короткой стороны треугольника.
-//		err += errDiff;
-//		while (err >= 0.5f) {
-//			err -= 1.0f;
-//			y += yIncrease ? 1 : -1;
-//		}
-//	}
 }

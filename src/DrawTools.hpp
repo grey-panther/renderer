@@ -42,7 +42,9 @@ struct VertexData
 			, normal(normal)
 	{}
 
+	VertexData() = default;
 
+public:
 	Vec3i coords;
 	Vec3 textureCoords;
 	Vec3 normal;

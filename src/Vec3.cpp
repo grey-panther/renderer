@@ -64,6 +64,14 @@ Vec3& Vec3::normalize()
 }
 
 
+Vec3 Vec3::normalized() const
+{
+	auto v = *this;
+	v.normalize();
+	return v;
+}
+
+
 float Vec3::length() const
 {
 	return std::sqrt(x * x + y * y + z * z);

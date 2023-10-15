@@ -34,6 +34,9 @@ public:
 	Vec3& normalize();
 
 	[[nodiscard]]
+	Vec3 normalized() const;
+
+	[[nodiscard]]
 	float length() const;
 
 	[[nodiscard]]
