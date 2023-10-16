@@ -1,5 +1,4 @@
-#ifndef RENDERER_DRAW_TOOLS_H
-#define RENDERER_DRAW_TOOLS_H
+#pragma once
 
 #include "Vec3.hpp"
 #include "Vec3i.hpp"
@@ -51,11 +50,9 @@ public:
 };
 
 void drawTriangle(
-		std::array<VertexData, 3> vertexes,
+		std::array<VertexData, 3> vertices,
 		std::vector<int>& zBuffer,
-		TGAImage& image,
+		TGAImage& outImage,
 		const Vec3& lightVector,
 		const TGAImage& texture
 );
-
-#endif

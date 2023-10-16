@@ -299,64 +299,65 @@ bool computeFragment(
 
 
 void drawTriangle(
-		std::array<VertexData, 3> vertexes,
+		std::array<VertexData, 3> vertices,
 		std::vector<int>& zBuffer,
-		TGAImage& image,
+		TGAImage& outImage,
 		const Vec3& lightVector,
 		const TGAImage& texture
 )
 {
-	// Отсортировать полученные точки в порядке возрастания x.
-	std::sort(vertexes.begin(), vertexes.end(), [](const VertexData& v1, const VertexData& v2) {
+	// Sort the vertices in order of ascending X.
+	std::sort(vertices.begin(), vertices.end(), [](const VertexData& v1, const VertexData& v2) {
 		return v1.coords.x < v2.coords.x;
 	});
 
-	const Vec3i& v1 = vertexes[0].coords;
-	const Vec3i& v2 = vertexes[1].coords;
-	const Vec3i& v3 = vertexes[2].coords;
+	const Vec3i& v1 = vertices[0].coords;
+	const Vec3i& v2 = vertices[1].coords;
+	const Vec3i& v3 = vertices[2].coords;
 
 	const Vec3i v1v2 = v2 - v1;
 	const Vec3i v2v3 = v3 - v2;
 	const Vec3i v1v3 = v3 - v1;
 
-	const Vec3& vt1 = vertexes[0].textureCoords;
-	const Vec3& vt2 = vertexes[1].textureCoords;
-	const Vec3& vt3 = vertexes[2].textureCoords;
+	const Vec3& vt1 = vertices[0].textureCoords;
+	const Vec3& vt2 = vertices[1].textureCoords;
+	const Vec3& vt3 = vertices[2].textureCoords;
 
 	const Vec3 vt1vt2 = vt2 - vt1;
 	const Vec3 vt2vt3 = vt3 - vt2;
 	const Vec3 vt1vt3 = vt3 - vt1;
 
-	const Vec3& vn1 = vertexes[0].normal;
-	const Vec3& vn2 = vertexes[1].normal;
-	const Vec3& vn3 = vertexes[2].normal;
+	const Vec3& vn1 = vertices[0].normal;
+	const Vec3& vn2 = vertices[1].normal;
+	const Vec3& vn3 = vertices[2].normal;
 
 	const Vec3 vn1vn2 = vn2 - vn1;
 	const Vec3 vn2vn3 = vn3 - vn2;
 	const Vec3 vn1vn3 = vn3 - vn1;
 
-	// Чтобы не выполнять деление в цикле, заранее посчитать обратную величину для v1v3.x.
+	// In order not to perform this division in a loop, calculate it beforehand.
 	const float inverseV1V3X = 1.0f / v1v3.x;
 	bool isLeft = true;
 
 	for (int x = v1.x; x <= v3.x; ++x) {
 		if (x == v2.x) {
 			if (v2.x == v3.x) {
-				// Выйти, иначе далее будет деление на 0 и бесконечный цикл.
+				// Exit in order to avoid division by 0 and an infinite loop.
 				return;
 			}
-			// Теперь рисовать правую часть треугольника.
+			// Start drawing the right part of the triangle from now on.
 			isLeft = false;
 		}
 		const float commonEdgeProgress = (x - v1.x) * inverseV1V3X;
-		// Определить точку на векторе v1v3 (общей стороне треугольника), которая соответствует текущему x.
+		// Determine the point on the vector v1v3 (the longest common edge of the triangle)
+		// which corresponds to the current x.
 		VertexData drawingVertex1(
 				v1 + commonEdgeProgress * v1v3,
 				vt1 + commonEdgeProgress * vt1vt3,
 				vn1 + commonEdgeProgress * vn1vn3
 		);
 
-		// Аналогично определить точку на левой (v1v2) или правой (v2v3) малой стороне треугольника.
+		// Determine the point on the left (v1v2) or on the right (v2v3) short edge of the triangle.
 		Vec3i v;
 		Vec3 vt;
 		Vec3 vn;
@@ -374,11 +375,11 @@ void drawTriangle(
 		}
 		VertexData drawingVertex2(v, vt, vn);
 
-		// Под номером 1 пусть будет вершина с меньшей Y координатой.
+		// Let the second vertex have a bigger Y-coordinate than the first.
 		if (drawingVertex1.coords.y > drawingVertex2.coords.y) {
 			std::swap(drawingVertex1, drawingVertex2);
 		}
-		// Закрасить вертикальный отрезок от vLow.y до vHigh.y.
+		// Draw a vertical line segment from vLow.y to vHigh.y.
 		const Vec3i& vLow = drawingVertex1.coords;
 		const Vec3i& vHigh = drawingVertex2.coords;
 		const Vec3& uv1 = drawingVertex1.textureCoords;
@@ -387,11 +388,11 @@ void drawTriangle(
 		const Vec3& n2 = drawingVertex2.normal;
 		const int yDiff = vHigh.y - vLow.y;
 		const int zDiff = vHigh.z - vLow.z;
-		int pixelIndex = vLow.y * image.get_width() + x;
+		int pixelIndex = vLow.y * outImage.get_width() + x;
 
-		for (int y = vLow.y; y <= vHigh.y; ++y, pixelIndex += image.get_width()) {
+		for (int y = vLow.y; y <= vHigh.y; ++y, pixelIndex += outImage.get_width()) {
 
-			// Отсечь пиксель, если он не попадает в изображение.
+			// Discard the fragment if it occurs to be outside the image.
 			if (pixelIndex < 0 || pixelIndex >= zBuffer.size()) {
 				continue;
 			}
@@ -416,7 +417,7 @@ void drawTriangle(
 				// Calculate uv-coordinates for the current fragment in the [0; 1] interval.
 				fragmentData.textureCoords = uv1 + t * (uv2 - uv1);
 
-				const bool needUpdateZBuffer = computeFragment(fragmentData, image, lightVector, texture);
+				const bool needUpdateZBuffer = computeFragment(fragmentData, outImage, lightVector, texture);
 				if (needUpdateZBuffer) {
 					zBuffer[pixelIndex] = z;
 				}
