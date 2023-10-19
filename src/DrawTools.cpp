@@ -298,6 +298,70 @@ bool computeFragment(
 }
 
 
+template<class VarType>
+class ScreenSpaceFragmentVarInterpolator
+{
+public:
+	ScreenSpaceFragmentVarInterpolator(const VarType& v1, const VarType& v2, const VarType& v3)
+			: _v1(v1)
+			, _v2(v2)
+			, _v3(v3)
+	{
+	}
+
+
+	VarType lerp(const VarType& from, const VarType& to, float t)
+	{
+		if (t <= 0.f) {
+			return from;
+		}
+		if (t >= 1.f) {
+			return to;
+		}
+		return from + t * (to - from);
+	}
+
+
+	VarType Calculate(
+			float commonEdgeProgress,
+			float leftEdgeProgress,
+			float rightEdgeProgress,
+			float verticalProgress
+	)
+	{
+		const auto& v1 = _v1;
+		const auto& v2 = _v2;
+		const auto& v3 = _v3;
+
+		const auto v1v2 = v2 - v1;
+		const auto v2v3 = v3 - v2;
+		const auto v1v3 = v3 - v1;
+
+		// Determine the point on the vector v1v3 (the longest common edge of the triangle)
+		// which corresponds to the current x.
+		const auto vertSegmentEndValue1 = v1 + commonEdgeProgress * v1v3;
+
+		// Determine the point on the left (v1v2) or on the right (v2v3) short edge of the triangle.
+		VarType vertSegmentEndData2;
+		const bool isLeft = (leftEdgeProgress < 1.f);
+		if (isLeft) {
+			vertSegmentEndData2 = v1 + leftEdgeProgress * v1v2;
+		}
+		else {
+			vertSegmentEndData2 = v2 + rightEdgeProgress * v2v3;
+		}
+
+		const VarType result = lerp(vertSegmentEndValue1, vertSegmentEndData2, verticalProgress);
+		return result;
+	}
+
+private:
+	const VarType _v1;
+	const VarType _v2;
+	const VarType _v3;
+};
+
+
 void drawTriangle(
 		std::array<VertexData, 3> vertices,
 		std::vector<int>& zBuffer,
@@ -311,6 +375,17 @@ void drawTriangle(
 		return v1.coords.x < v2.coords.x;
 	});
 
+	ScreenSpaceFragmentVarInterpolator<Vec3> normalInterp(
+			vertices[0].normal,
+			vertices[1].normal,
+			vertices[2].normal
+	);
+	ScreenSpaceFragmentVarInterpolator<Vec3> textureInterp(
+			vertices[0].textureCoords,
+			vertices[1].textureCoords,
+			vertices[2].textureCoords
+	);
+
 	const Vec3i& v1 = vertices[0].coords;
 	const Vec3i& v2 = vertices[1].coords;
 	const Vec3i& v3 = vertices[2].coords;
@@ -318,22 +393,6 @@ void drawTriangle(
 	const Vec3i v1v2 = v2 - v1;
 	const Vec3i v2v3 = v3 - v2;
 	const Vec3i v1v3 = v3 - v1;
-
-	const Vec3& vt1 = vertices[0].textureCoords;
-	const Vec3& vt2 = vertices[1].textureCoords;
-	const Vec3& vt3 = vertices[2].textureCoords;
-
-	const Vec3 vt1vt2 = vt2 - vt1;
-	const Vec3 vt2vt3 = vt3 - vt2;
-	const Vec3 vt1vt3 = vt3 - vt1;
-
-	const Vec3& vn1 = vertices[0].normal;
-	const Vec3& vn2 = vertices[1].normal;
-	const Vec3& vn3 = vertices[2].normal;
-
-	const Vec3 vn1vn2 = vn2 - vn1;
-	const Vec3 vn2vn3 = vn3 - vn2;
-	const Vec3 vn1vn3 = vn3 - vn1;
 
 	// In order not to perform this division in a loop, calculate it beforehand.
 	const float inverseV1V3X = 1.0f / v1v3.x;
@@ -348,48 +407,35 @@ void drawTriangle(
 			// Start drawing the right part of the triangle from now on.
 			isLeft = false;
 		}
-		const float commonEdgeProgress = (x - v1.x) * inverseV1V3X;
+
 		// Determine the point on the vector v1v3 (the longest common edge of the triangle)
 		// which corresponds to the current x.
-		VertexData drawingVertex1(
-				v1 + commonEdgeProgress * v1v3,
-				vt1 + commonEdgeProgress * vt1vt3,
-				vn1 + commonEdgeProgress * vn1vn3
-		);
+		const float commonEdgeProgress = (x - v1.x) * inverseV1V3X;
+		const Vec3i commonEdgePoint = v1 + commonEdgeProgress * v1v3;
 
 		// Determine the point on the left (v1v2) or on the right (v2v3) short edge of the triangle.
-		Vec3i v;
-		Vec3 vt;
-		Vec3 vn;
+		Vec3i shortEdgePoint;
+		float leftEdgeProgress = 0.f;
+		float rightEdgeProgress = 0.f;
 		if (isLeft) {
-			const float leftEdgeProgress = static_cast<float>(x - v1.x) / v1v2.x;
-			v = v1 + leftEdgeProgress * v1v2;
-			vt = vt1 + leftEdgeProgress * vt1vt2;
-			vn = vn1 + leftEdgeProgress * vn1vn2;
+			leftEdgeProgress = static_cast<float>(x - v1.x) / v1v2.x;
+			shortEdgePoint = v1 + leftEdgeProgress * v1v2;
 		}
 		else {
-			const float rightEdgeProgress = static_cast<float>(x - v2.x) / v2v3.x;
-			v = v2 + rightEdgeProgress * v2v3;
-			vt = vt2 + rightEdgeProgress * vt2vt3;
-			vn = vn2 + rightEdgeProgress * vn2vn3;
+			leftEdgeProgress = 1.f;
+			rightEdgeProgress = static_cast<float>(x - v2.x) / v2v3.x;
+			shortEdgePoint = v2 + rightEdgeProgress * v2v3;
 		}
-		VertexData drawingVertex2(v, vt, vn);
 
-		// Let the second vertex have a bigger Y-coordinate than the first.
-		if (drawingVertex1.coords.y > drawingVertex2.coords.y) {
-			std::swap(drawingVertex1, drawingVertex2);
-		}
-		// Draw a vertical line segment from vLow.y to vHigh.y.
-		const Vec3i& vLow = drawingVertex1.coords;
-		const Vec3i& vHigh = drawingVertex2.coords;
-		const Vec3& uv1 = drawingVertex1.textureCoords;
-		const Vec3& uv2 = drawingVertex2.textureCoords;
-		const Vec3& n1 = drawingVertex1.normal;
-		const Vec3& n2 = drawingVertex2.normal;
+		const bool commonEdgeHigher = commonEdgePoint.y > shortEdgePoint.y;
+		const Vec3i& vLow = commonEdgeHigher ? shortEdgePoint : commonEdgePoint;
+		const Vec3i& vHigh = commonEdgeHigher ? commonEdgePoint : shortEdgePoint;
+
 		const int yDiff = vHigh.y - vLow.y;
 		const int zDiff = vHigh.z - vLow.z;
 		int pixelIndex = vLow.y * outImage.get_width() + x;
 
+		// Draw the vertical line segment from vLow.y to vHigh.y.
 		for (int y = vLow.y; y <= vHigh.y; ++y, pixelIndex += outImage.get_width()) {
 
 			// Discard the fragment if it occurs to be outside the image.
@@ -397,14 +443,14 @@ void drawTriangle(
 				continue;
 			}
 
+			float verticalProgress = 0.f;
 			int z = 0;
-			float t = 0.f;
 			if (yDiff == 0) {
-				t = 1.f;
+				verticalProgress = 1.f;
 				z = std::max(vLow.z, vHigh.z);
 			} else {
-				t = static_cast<float>(y - vLow.y) / yDiff;
-				z = vLow.z + static_cast<int>(std::round(t * zDiff));
+				verticalProgress = static_cast<float>(y - vLow.y) / yDiff;
+				z = vLow.z + static_cast<int>(std::round(verticalProgress * zDiff));
 			}
 
 			// Check by z-buffer whether we can draw the fragment (the pixel) or not.
@@ -412,10 +458,13 @@ void drawTriangle(
 				VertexData fragmentData;
 				// Set pixel coordinates in the output image space.
 				fragmentData.coords = Vec3i(x, y, z);
-				// Calculate the normal vector for the current fragment.
-				fragmentData.normal = n1 + t * (n2 - n1);
-				// Calculate uv-coordinates for the current fragment in the [0; 1] interval.
-				fragmentData.textureCoords = uv1 + t * (uv2 - uv1);
+
+				float fromCommonVertProgress = verticalProgress;
+				if (commonEdgeHigher) {
+					fromCommonVertProgress = 1.f - verticalProgress;
+				}
+				fragmentData.normal = normalInterp.Calculate(commonEdgeProgress, leftEdgeProgress, rightEdgeProgress, fromCommonVertProgress);
+				fragmentData.textureCoords = textureInterp.Calculate(commonEdgeProgress, leftEdgeProgress, rightEdgeProgress, fromCommonVertProgress);
 
 				const bool needUpdateZBuffer = computeFragment(fragmentData, outImage, lightVector, texture);
 				if (needUpdateZBuffer) {
