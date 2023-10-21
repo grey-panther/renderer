@@ -1,5 +1,7 @@
 #include "DrawTools.hpp"
 
+#include "Mat4.hpp"
+
 #include <algorithm>
 #include <array>
 
@@ -260,6 +262,20 @@ void drawLineWithDepthMask(int x0, int y0, int z0, int x1, int y1, int z1, std::
 }
 
 
+VertexData computeVertex(const VertexData& inVertexData, const Mat4& transform, const Mat4& normalsTransform)
+{
+	VertexData outVertexData;
+
+	// Apply transformations.
+	outVertexData.position = transform * inVertexData.position;
+	const Vec4 transformedNormal = normalsTransform * Vec4(inVertexData.normal, 0.f);
+	outVertexData.normal = transformedNormal.xyz().normalize();
+	outVertexData.textureCoords = inVertexData.textureCoords;
+
+	return outVertexData;
+}
+
+
 // Return true if the fragment was drawn.
 // Return false if the fragment wasn't drawn and should not affect z-buffer.
 bool computeFragment(
@@ -292,7 +308,7 @@ bool computeFragment(
 	const auto g = static_cast<unsigned char>(textureColor.g * lightIntensity);
 	const auto b = static_cast<unsigned char>(textureColor.b * lightIntensity);
 
-	outImage.set(fragmentData.coords.x, fragmentData.coords.y, TGAColor(r, g, b, 255));
+	outImage.set(fragmentData.screenSpacePosition.x, fragmentData.screenSpacePosition.y, TGAColor(r, g, b, 255));
 
 	return true;
 }
@@ -372,7 +388,7 @@ void drawTriangle(
 {
 	// Sort the vertices in order of ascending X.
 	std::sort(vertices.begin(), vertices.end(), [](const VertexData& v1, const VertexData& v2) {
-		return v1.coords.x < v2.coords.x;
+		return v1.screenSpacePosition.x < v2.screenSpacePosition.x;
 	});
 
 	ScreenSpaceFragmentVarInterpolator<Vec3> normalInterp(
@@ -386,9 +402,9 @@ void drawTriangle(
 			vertices[2].textureCoords
 	);
 
-	const Vec3i& v1 = vertices[0].coords;
-	const Vec3i& v2 = vertices[1].coords;
-	const Vec3i& v3 = vertices[2].coords;
+	const Vec3i& v1 = vertices[0].screenSpacePosition;
+	const Vec3i& v2 = vertices[1].screenSpacePosition;
+	const Vec3i& v3 = vertices[2].screenSpacePosition;
 
 	const Vec3i v1v2 = v2 - v1;
 	const Vec3i v2v3 = v3 - v2;
@@ -457,7 +473,7 @@ void drawTriangle(
 			if (z > zBuffer[pixelIndex]) {
 				VertexData fragmentData;
 				// Set pixel coordinates in the output image space.
-				fragmentData.coords = Vec3i(x, y, z);
+				fragmentData.screenSpacePosition = Vec3i(x, y, z);
 
 				float fromCommonVertProgress = verticalProgress;
 				if (commonEdgeHigher) {

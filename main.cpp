@@ -3,6 +3,7 @@
 #include "Mat4.hpp"
 #include "MathTests.hpp"
 #include "Transform.hpp"
+#include "Utilities.hpp"
 #include "Vec3i.hpp"
 #include "Vec4.hpp"
 
@@ -21,7 +22,7 @@ void drawAxes(TGAImage& image, const Mat4& transformMatrix);
 
 void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& transformMatrix);
 
-void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix);
+void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transform);
 
 Mat4 getViewportMatrix(int width, int height);
 
@@ -189,10 +190,13 @@ Mat4 getProjectionMatrix()
 }
 
 
-void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transformMatrix)
+void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transform)
 {
-	const std::vector<Vec4>& coords = model.getCoords();
-	const std::vector<ModelFace>& faces = model.getFaces();
+	const std::vector<ModelFace>& modelFaces = model.getFaces();
+	const std::vector<Vec4>& modelPositions = model.getCoords();
+	const std::vector<Vec3>& modelTextureCoordinates = model.getTextureCoords();
+	const std::vector<Vec3>& modelNormals = model.getNormals();
+	assertFalse(modelNormals.empty());
 
 	const Vec3 lightVector(0, 0, 1);
 
@@ -200,58 +204,41 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 	// we can transform normals multiplying them by the transformMatrix as we do with vertex positions.
 	// It works because the inverse is equal to the transpose, and the transposed inverse of matrix M is M itself.
 	// Otherwise, we must multiply transform normals by the transposed inverse of transformMatrix.
-	const Mat4& normalsTransform = transformMatrix.getInverse().getTransposed();
+	const Mat4& normalsTransform = transform.getInverse().getTransposed();
 
-	// Инициализировать z-buffer
-	const size_t pixelsCount = static_cast<size_t>(image.get_width() * image.get_height());
+	// Initialize z-buffer.
+	const auto pixelsCount = static_cast<size_t>(image.get_width() * image.get_height());
 	std::vector<int> zBuffer(pixelsCount, std::numeric_limits<int>::min());
 
-	for (const ModelFace& face : faces) {
-		const ModelFace::Indices& coordVertexIndexes = face.getCoordsIndices();
+	for (const ModelFace& face : modelFaces) {
+		const ModelFace::Indices& posIndices = face.getCoordsIndices();
+		const ModelFace::Indices& texCoordsIndices = face.getTextureCoordsIndices();
+		const ModelFace::Indices& normalIndices = face.getNormalsIndices();
+		static_assert(ModelFace::FACE_VERTEXES_COUNT == 3);
 
-		// Нормализованные (от 0 до 1) координаты вершин треугольника.
-		auto vertex0 = coords[coordVertexIndexes[0]];
-		auto vertex1 = coords[coordVertexIndexes[1]];
-		auto vertex2 = coords[coordVertexIndexes[2]];
+		std::array<VertexData, 3> inVertexArray;
+		for (int i = 0; i < inVertexArray.size(); ++i) {
+			// Get the normalized position of the vertex in model space.
+			inVertexArray[i].position = modelPositions[posIndices[i]];
 
-		// Apply transformations.
-		vertex0 = transformMatrix * vertex0;
-		vertex1 = transformMatrix * vertex1;
-		vertex2 = transformMatrix * vertex2;
+			// Get the texture normalized coordinates.
+			inVertexArray[i].textureCoords = modelTextureCoordinates[texCoordsIndices[i]];
 
-		// Transform coordinates from homogeneous to 3D-cartesian ones (make w == 1).
-		const Vec3 v0 = vertex0.xyz() / vertex0.w;
-		const Vec3 v1 = vertex1.xyz() / vertex1.w;
-		const Vec3 v2 = vertex2.xyz() / vertex2.w;
+			// Get the normal vector of the vertex in model space.
+			inVertexArray[i].normal = modelNormals[normalIndices[i]];
+		}
 
-		// Получить нормализованные текстурные координаты.
-		const std::array<int, ModelFace::FACE_VERTEXES_COUNT> tvIndexes = face.getTextureCoordsIndices();
-		const std::vector<Vec3>& textureVertexes = model.getTextureCoords();
-		const Vec3& tv0 = textureVertexes[tvIndexes[0]];
-		const Vec3& tv1 = textureVertexes[tvIndexes[1]];
-		const Vec3& tv2 = textureVertexes[tvIndexes[2]];
+		std::array<VertexData, 3> vertices;
+		for (int i = 0; i < inVertexArray.size(); ++i) {
+			vertices[i] = computeVertex(inVertexArray[i], transform, normalsTransform);
+			auto& vertex = vertices[i];
 
-		// Получить нормали к каждой из вершин.
-		const ModelFace::Indices& vnIndexes = face.getNormalsIndices();
-		const std::vector<Vec3>& vertexNormals = model.getNormals();
-		// TODO Посчитать нормальные векторы, если vertexNormals пуст. Или как-то по-другому обработать, чтобы не падало
-		const Vec3& normal0 = vertexNormals[vnIndexes[0]];
-		const Vec3& normal1 = vertexNormals[vnIndexes[1]];
-		const Vec3& normal2 = vertexNormals[vnIndexes[2]];
-
-		const Vec4 transformedNormal0 = normalsTransform * Vec4(normal0, 0);
-		const Vec4 transformedNormal1 = normalsTransform * Vec4(normal1, 0);
-		const Vec4 transformedNormal2 = normalsTransform * Vec4(normal2, 0);
-		const Vec3 n0 = transformedNormal0.xyz().normalize();
-		const Vec3 n1 = transformedNormal1.xyz().normalize();
-		const Vec3 n2 = transformedNormal2.xyz().normalize();
+			// Transform coordinates from homogeneous to 3D-cartesian ones (make w == 1).
+			vertex.screenSpacePosition = (vertex.position.xyz() / vertex.position.w).rounded();
+		}
 
 		drawTriangle(
-				{
-					VertexData(v0.round(), tv0, n0),
-					VertexData(v1.round(), tv1, n1),
-					VertexData(v2.round(), tv2, n2),
-				},
+				vertices,
 				zBuffer,
 				image,
 				lightVector,

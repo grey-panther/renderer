@@ -40,7 +40,7 @@ public:
 	float length() const;
 
 	[[nodiscard]]
-	Vec3i round() const;
+	Vec3i rounded() const;
 
 	static float distance(const Vec3& p0, const Vec3& p1);
 

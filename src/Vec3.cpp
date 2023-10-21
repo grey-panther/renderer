@@ -78,7 +78,7 @@ float Vec3::length() const
 }
 
 
-Vec3i Vec3::round() const
+Vec3i Vec3::rounded() const
 {
 	return Vec3i(*this);
 }

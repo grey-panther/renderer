@@ -2,6 +2,7 @@
 
 #include "Vec3.hpp"
 #include "Vec3i.hpp"
+#include "Vec4.hpp"
 #include <tgaimage.h>
 #include <array>
 #include <vector>
@@ -35,19 +36,25 @@ void drawTriangle(
 
 struct VertexData
 {
-	VertexData(const Vec3i& coords, const Vec3& textureCoords, const Vec3& normal)
-			: coords(coords)
-			, textureCoords(textureCoords)
-			, normal(normal)
-	{}
-
 	VertexData() = default;
 
 public:
-	Vec3i coords;
+	Vec4 position;
+	Vec3i screenSpacePosition;
 	Vec3 textureCoords;
 	Vec3 normal;
 };
+
+VertexData computeVertex(const VertexData& inVertexData, const Mat4& transform, const Mat4& normalsTransform);
+
+// Return true if the fragment was drawn.
+// Return false if the fragment wasn't drawn and should not affect z-buffer.
+bool computeFragment(
+		const VertexData& fragmentData,
+		TGAImage& outImage,
+		const Vec3& lightVector,
+		const TGAImage& texture
+);
 
 void drawTriangle(
 		std::array<VertexData, 3> vertices,
