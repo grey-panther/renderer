@@ -276,8 +276,6 @@ VertexData computeVertex(const VertexData& inVertexData, const Mat4& transform, 
 }
 
 
-// Return true if the fragment was drawn.
-// Return false if the fragment wasn't drawn and should not affect z-buffer.
 bool computeFragment(
 		const VertexData& fragmentData,
 		TGAImage& outImage,
@@ -288,13 +286,9 @@ bool computeFragment(
 	// Calculate the light intensity on the fragment.
 	// A normal vector may become a non-unit vector after fragment interpolation.
 	const Vec3& normal = fragmentData.normal.normalized();
-	const float lightIntensity = Vec3::dotMultiply(normal, lightVector);
-
+	float lightIntensity = Vec3::dotMultiply(normal, lightVector);
 	if (lightIntensity < 0) {
-		// Discard an invisible fragment.
-		// The discarded fragment won't be set in z-buffer so as not to overlap another,
-		// possibly more distant, but visible fragment.
-		return false;
+		lightIntensity = 0.f;
 	}
 
 	// Get the color from the texture using the calculated uv-coordinates.
