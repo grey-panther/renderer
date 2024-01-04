@@ -1,6 +1,7 @@
 #include "DrawTools.hpp"
 
 #include "Mat4.hpp"
+#include "Utilities.hpp"
 
 #include <algorithm>
 #include <array>
@@ -303,73 +304,114 @@ bool computeFragment(
 	const auto b = static_cast<unsigned char>(textureColor.b * lightIntensity);
 
 	outImage.set(fragmentData.screenSpacePosition.x, fragmentData.screenSpacePosition.y, TGAColor(r, g, b, 255));
+	// Black and white rendering:
+	// outImage.set(fragmentData.screenSpacePosition.x, fragmentData.screenSpacePosition.y, TGAColor(lightIntensity * 255, lightIntensity * 255, lightIntensity * 255, 255));
 
 	return true;
 }
 
-
-template<class VarType>
-class ScreenSpaceFragmentVarInterpolator
+[[nodiscard]]
+std::tuple<Vec3, bool> calculateBarycentricCoordinates(
+		const Vec2i& pointA,
+		const Vec2i& pointB,
+		const Vec2i& pointC,
+		const Vec2i& pointP
+)
 {
-public:
-	ScreenSpaceFragmentVarInterpolator(const VarType& v1, const VarType& v2, const VarType& v3)
-			: _v1(v1)
-			, _v2(v2)
-			, _v3(v3)
-	{
+	const Vec2i ab = pointB - pointA;
+	const Vec2i ac = pointC - pointA;
+	const Vec2i pa = pointA - pointP;
+
+	const auto v1 = Vec3(ab.x, ac.x, pa.x);
+	const auto v2 = Vec3(ab.y, ac.y, pa.y);
+	const Vec3 crossVec = Vec3::crossMultiply(v1, v2);
+
+	if (isEqualFloat(crossVec.z, 0)) {
+		// crossVec.z = v1.x * v2.y - v1.y * v2.x (from cross product definition)
+		// crossVec.z = ab.x * ac.y - ac.x * ab.y (from v1 and v2 initialization)
+		// if crossVec.z == 0 then vectors ab and ac are parallel:
+		//		ab.x * ac.y == ac.x * ab.y
+		//		ab.x / ab.y == ac.x / ac.y
+		//		That means that both vectors have the same tilt (angle) +- 180deg.
+		// The triangle ABC is degenerate, because vectors ab and ac are parallel.
+		// It's impossible to compute barycentric coordinates for a degenerate triangle.
+		return {{0, 0, 0}, false};
 	}
 
+	const float u = crossVec.x / crossVec.z;
+	const float v = crossVec.y / crossVec.z;
+	const float t = 1 - u - v;
 
-	VarType lerp(const VarType& from, const VarType& to, float t)
-	{
-		if (t <= 0.f) {
-			return from;
-		}
-		if (t >= 1.f) {
-			return to;
-		}
-		return from + t * (to - from);
+	return {{t, u, v}, true};
+}
+
+
+[[nodiscard]]
+std::tuple<Vec3, bool> calculateClipSpaceBarycentricCoordinates(
+	const std::array<VertexData, 3>& triangleVertices,
+	const Vec2i& point
+)
+{
+	// Calculate barycentric position in screen space (after perspective division).
+	const auto [screenBarPos, success] = calculateBarycentricCoordinates(
+		triangleVertices[0].screenSpacePosition.xy(),
+		triangleVertices[1].screenSpacePosition.xy(),
+		triangleVertices[2].screenSpacePosition.xy(),
+		point
+	);
+	if (!success) {
+		return {{0, 0, 0}, false};
 	}
 
+	//
+	// Calculate barycentric position in clip space (before perspective division).
+	//
 
-	VarType Calculate(
-			float commonEdgeProgress,
-			float leftEdgeProgress,
-			float rightEdgeProgress,
-			float verticalProgress
-	)
-	{
-		const auto& v1 = _v1;
-		const auto& v2 = _v2;
-		const auto& v3 = _v3;
+	// A, B, C - vertex coordinates in clip space
+	// A', B', C' - the same vertex coordinates in screen space after perspective division.
+	// P and P' - some point in clip space and screen space respectively.
+	// Translate the barycentric coordinates in screen space (alpha', beta', gamma')
+	// to the barycentric coordinates in clip space before perspective division (alpha, beta, gamma).
+	//						[alpha']
+	// P' = [A' B' C'] *	[beta' ]
+	//						[gamma']
+	// P' = P.xyz / P.w
+	// A' = A.xyz / A.w
+	// B' = ...
+	// C' = ...
+	//											[alpha']
+	// P' = [A.xyz/A.w B.xyz/B.w C.xyz/C.w] *	[beta' ]
+	//											[gamma']
+	//							  [alpha' / A.w]
+	// P' = [A.xyz B.xyz C.xyz] * [beta'  / B.w]
+	//							  [gamma' / C.w]
+	// P.xyz = P' * P.w
+	//								 [alpha' / A.w]
+	// P.xyz = [A.xyz B.xyz C.xyz] * [beta'  / B.w] * P.w
+	//								 [gamma' / C.w]
+	// The column vector in the right side is the barycentric coords in clip space before perspective division.
+	// The sum of normalized barycentric coords is equal to 1:
+	// (alpha'/A.w + beta'/B.w + gamma'/C.w) * P.w = 1
+	// P.w = 1 / (alpha'/A.w + beta'/B.w + gamma'/C.w)
+	// alpha = (alpha' / A.w) / (alpha'/A.w + beta'/B.w + gamma'/C.w)
+	// beta = ...
+	// gamma = ...
 
-		const auto v1v2 = v2 - v1;
-		const auto v2v3 = v3 - v2;
-		const auto v1v3 = v3 - v1;
+	const Vec4& A = triangleVertices[0].position;
+	const Vec4& B = triangleVertices[1].position;
+	const Vec4& C = triangleVertices[2].position;
+	float alpha = screenBarPos.x / A.w;
+	float beta = screenBarPos.y / B.w;
+	float gamma = screenBarPos.z / C.w;
+	const float sum = alpha + beta + gamma;
+	alpha /= sum;
+	beta /= sum;
+	gamma /= sum;
+	assertTrue(isEqualFloat(alpha + beta + gamma, 1.f));
 
-		// Determine the point on the vector v1v3 (the longest common edge of the triangle)
-		// which corresponds to the current x.
-		const auto vertSegmentEndValue1 = v1 + commonEdgeProgress * v1v3;
-
-		// Determine the point on the left (v1v2) or on the right (v2v3) short edge of the triangle.
-		VarType vertSegmentEndData2;
-		const bool isLeft = (leftEdgeProgress < 1.f);
-		if (isLeft) {
-			vertSegmentEndData2 = v1 + leftEdgeProgress * v1v2;
-		}
-		else {
-			vertSegmentEndData2 = v2 + rightEdgeProgress * v2v3;
-		}
-
-		const VarType result = lerp(vertSegmentEndValue1, vertSegmentEndData2, verticalProgress);
-		return result;
-	}
-
-private:
-	const VarType _v1;
-	const VarType _v2;
-	const VarType _v3;
-};
+	const auto clipBarPos = Vec3(alpha, beta, gamma);
+	return {clipBarPos, true};
+}
 
 
 void drawTriangle(
@@ -384,17 +426,6 @@ void drawTriangle(
 	std::sort(vertices.begin(), vertices.end(), [](const VertexData& v1, const VertexData& v2) {
 		return v1.screenSpacePosition.x < v2.screenSpacePosition.x;
 	});
-
-	ScreenSpaceFragmentVarInterpolator<Vec3> normalInterp(
-			vertices[0].normal,
-			vertices[1].normal,
-			vertices[2].normal
-	);
-	ScreenSpaceFragmentVarInterpolator<Vec3> textureInterp(
-			vertices[0].textureCoords,
-			vertices[1].textureCoords,
-			vertices[2].textureCoords
-	);
 
 	const Vec3i& v1 = vertices[0].screenSpacePosition;
 	const Vec3i& v2 = vertices[1].screenSpacePosition;
@@ -441,8 +472,6 @@ void drawTriangle(
 		const Vec3i& vLow = commonEdgeHigher ? shortEdgePoint : commonEdgePoint;
 		const Vec3i& vHigh = commonEdgeHigher ? commonEdgePoint : shortEdgePoint;
 
-		const int yDiff = vHigh.y - vLow.y;
-		const int zDiff = vHigh.z - vLow.z;
 		int pixelIndex = vLow.y * outImage.get_width() + x;
 
 		// Draw the vertical line segment from vLow.y to vHigh.y.
@@ -453,33 +482,45 @@ void drawTriangle(
 				continue;
 			}
 
-			float verticalProgress = 0.f;
-			int z = 0;
-			if (yDiff == 0) {
-				verticalProgress = 1.f;
-				z = std::max(vLow.z, vHigh.z);
-			} else {
-				verticalProgress = static_cast<float>(y - vLow.y) / yDiff;
-				z = vLow.z + static_cast<int>(std::round(verticalProgress * zDiff));
+			// Linear interpolation of the fragment attributes doesn't work properly after perspective division.
+			// Barycentric coordinates in screen space are also unsuitable for such interpolations.
+			// Instead, use barycentric coordinates in clip space (before perspective division).
+
+			// Barycentric coordinates of screen point {x, y} within the triangle before perspective division.
+			const auto [barycentricPos, success] = calculateClipSpaceBarycentricCoordinates(vertices, {x, y});
+			if (!success) {
+				continue;
 			}
 
+			const float preciseZ =
+					vertices[0].position.z * barycentricPos.x
+					+ vertices[1].position.z * barycentricPos.y
+					+ vertices[2].position.z * barycentricPos.z;
+			const int z = static_cast<int>(std::round(preciseZ));
+
 			// Check by z-buffer whether we can draw the fragment (the pixel) or not.
-			if (z > zBuffer[pixelIndex]) {
-				VertexData fragmentData;
-				// Set pixel coordinates in the output image space.
-				fragmentData.screenSpacePosition = Vec3i(x, y, z);
+			if (z <= zBuffer[pixelIndex]) {
+				continue;
+			}
 
-				float fromCommonVertProgress = verticalProgress;
-				if (commonEdgeHigher) {
-					fromCommonVertProgress = 1.f - verticalProgress;
-				}
-				fragmentData.normal = normalInterp.Calculate(commonEdgeProgress, leftEdgeProgress, rightEdgeProgress, fromCommonVertProgress);
-				fragmentData.textureCoords = textureInterp.Calculate(commonEdgeProgress, leftEdgeProgress, rightEdgeProgress, fromCommonVertProgress);
+			VertexData fragmentData;
 
-				const bool needUpdateZBuffer = computeFragment(fragmentData, outImage, lightVector, texture);
-				if (needUpdateZBuffer) {
-					zBuffer[pixelIndex] = z;
-				}
+			// Set the fragment position in the output image space.
+			fragmentData.screenSpacePosition = Vec3i(x, y, z);
+
+			// Interpolate the fragment attributes.
+			fragmentData.normal =
+					vertices[0].normal * barycentricPos.x
+					+ vertices[1].normal * barycentricPos.y
+					+ vertices[2].normal * barycentricPos.z;
+			fragmentData.textureCoords =
+					vertices[0].textureCoords * barycentricPos.x
+					+ vertices[1].textureCoords * barycentricPos.y
+					+ vertices[2].textureCoords * barycentricPos.z;
+
+			const bool drawn = computeFragment(fragmentData, outImage, lightVector, texture);
+			if (drawn) {
+				zBuffer[pixelIndex] = z;
 			}
 		}
 	}

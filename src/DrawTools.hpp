@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vec2i.hpp"
 #include "Vec3.hpp"
 #include "Vec3i.hpp"
 #include "Vec4.hpp"
@@ -62,4 +63,19 @@ void drawTriangle(
 		TGAImage& outImage,
 		const Vec3& lightVector,
 		const TGAImage& texture
+);
+
+/**
+ * Calculates barycentric coordinates for the point P within the triangle ABC.
+ *
+ * @return The calculated coordinates and a success flag.
+ * If the success flag is false, it indicates that the triangle ABC is degenerate
+ * and the barycentric coordinates cannot be reliably calculated.
+ */
+[[nodiscard]]
+std::tuple<Vec3, bool> calculateBarycentricCoordinates(
+	const Vec2i& pointA,
+	const Vec2i& pointB,
+	const Vec2i& pointC,
+	const Vec2i& pointP
 );

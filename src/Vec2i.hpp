@@ -19,3 +19,7 @@ public:
 	int x = 0;
 	int y = 0;
 };
+
+Vec2i operator+(const Vec2i& v1, const Vec2i& v2);
+
+Vec2i operator-(const Vec2i& v1, const Vec2i& v2);

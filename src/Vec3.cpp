@@ -1,6 +1,17 @@
 #include "Vec3.hpp"
 #include "Vec3i.hpp"
 
+#include <ostream>
+#include <string>
+
+
+Vec3::Vec3(const Vec3i& intVec)
+		: x(intVec.x)
+		, y(intVec.y)
+		, z(intVec.z)
+{
+}
+
 
 Vec3& Vec3::operator*=(float multiplier)
 {
@@ -132,4 +143,11 @@ Vec3 operator/(const Vec3& v, float divider)
 	Vec3 result = v;
 	result /= divider;
 	return result;
+}
+
+
+std::ostream& operator<<(std::ostream& os, const Vec3& v)
+{
+	os << "Vec3(" << std::to_string(v.x) << ", " << std::to_string(v.y) << ", " << std::to_string(v.z) << ")";
+	return os;
 }

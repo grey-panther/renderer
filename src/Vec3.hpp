@@ -1,7 +1,9 @@
 #pragma once
 
 #include "forwards.hpp"
+
 #include <cmath>
+#include <iosfwd>
 
 
 struct Vec3
@@ -15,11 +17,17 @@ public:
 			, z(z)
 	{}
 
+	Vec3(int x, int y, int z)
+			: Vec3(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z))
+	{}
+
 	explicit Vec3(float scalar)
 			: x(scalar)
 			, y(scalar)
 			, z(scalar)
 	{}
+
+	explicit Vec3(const Vec3i& intVec);
 
 	Vec3& operator*=(float multiplier);
 
@@ -69,3 +77,5 @@ Vec3 operator*(float multiplier, Vec3 v);
 inline Vec3 operator*(const Vec3& v, float multiplier) { return operator*(multiplier, v); }
 
 Vec3 operator/(const Vec3& v, float divider);
+
+std::ostream& operator<<(std::ostream& os, const Vec3& v);
