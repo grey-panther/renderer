@@ -22,7 +22,13 @@ void drawAxes(TGAImage& image, const Mat4& transformMatrix);
 
 void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& transformMatrix);
 
-void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transform);
+void drawModelFaces(
+		const ObjFormatModel& model,
+		const TGAImage& texture,
+		const Mat4& transform,
+		TGAImage& outImage,
+		std::vector<int>& zBuffer
+);
 
 Mat4 getViewportMatrix(int width, int height);
 
@@ -31,6 +37,9 @@ Mat4 getProjectionMatrix();
 Mat4 getViewMatrix();
 
 Mat4 getModelTransformMatrix();
+
+std::vector<int> makeZBuffer(const TGAImage& outImage);
+
 
 int main()
 {
@@ -49,6 +58,12 @@ int main()
 	headTexture.read_tga_file("../assets/african_head_diffuse.tga");
 	headTexture.flip_vertically();
 
+	// Inner eyes.
+	const ObjFormatModel eyeInnerModel("../assets/african_head_eye_inner.obj");
+	TGAImage eyeInnerTexture(256, 256, TGAImage::RGB);
+	eyeInnerTexture.read_tga_file("../assets/african_head_eye_inner_diffuse.tga");
+	eyeInnerTexture.flip_vertically();
+
 	// Init output image
 	const int OUTPUT_IMAGE_WIDTH = 1920;
 	const int OUTPUT_IMAGE_HEIGHT = 1080;
@@ -62,9 +77,12 @@ int main()
 	const Mat4 modelMatrix = getModelTransformMatrix();
 	const Mat4 resultMatrix = viewportMatrix * projectionMatrix * viewMatrix * modelMatrix;
 
-	drawModelFaces(outputImage, floorModel, floorTexture, resultMatrix);
+	std::vector<int> zBuffer = makeZBuffer(outputImage);
 
-	drawModelFaces(outputImage, headModel, headTexture, resultMatrix);
+	drawModelFaces(floorModel, floorTexture, resultMatrix, outputImage, zBuffer);
+
+	drawModelFaces(headModel, headTexture, resultMatrix, outputImage, zBuffer);
+	drawModelFaces(eyeInnerModel, eyeInnerTexture, resultMatrix, outputImage, zBuffer);
 
 //	drawModelEdges(outputImage, headModel, resultMatrix);
 
@@ -190,8 +208,18 @@ Mat4 getProjectionMatrix()
 }
 
 
-void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage& texture, const Mat4& transform)
+void drawModelFaces(
+		const ObjFormatModel& model,
+		const TGAImage& texture,
+		const Mat4& transform,
+		TGAImage& outImage,
+		std::vector<int>& zBuffer
+)
 {
+	const auto imageSize = outImage.get_width() * outImage.get_height();
+	assertTrueMsg(imageSize == zBuffer.size(),
+			"image size = " + std::to_string(imageSize) + "\nzBuffer size = " + std::to_string(zBuffer.size()));
+
 	const std::vector<ModelFace>& modelFaces = model.getFaces();
 	const std::vector<Vec4>& modelPositions = model.getCoords();
 	const std::vector<Vec3>& modelTextureCoordinates = model.getTextureCoords();
@@ -205,10 +233,6 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 	// It works because the inverse is equal to the transpose, and the transposed inverse of matrix M is M itself.
 	// Otherwise, we must multiply transform normals by the transposed inverse of transformMatrix.
 	const Mat4& normalsTransform = transform.getInverse().getTransposed();
-
-	// Initialize z-buffer.
-	const auto pixelsCount = static_cast<size_t>(image.get_width() * image.get_height());
-	std::vector<int> zBuffer(pixelsCount, std::numeric_limits<int>::min());
 
 	for (const ModelFace& face : modelFaces) {
 		const ModelFace::Indices& posIndices = face.getCoordsIndices();
@@ -240,7 +264,7 @@ void drawModelFaces(TGAImage& image, const ObjFormatModel& model, const TGAImage
 		drawTriangle(
 				vertices,
 				zBuffer,
-				image,
+				outImage,
 				lightVector,
 				texture
 		);
@@ -285,4 +309,12 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& tr
 			drawLine(x0, y0, x1, y1, image, WHITE_COLOR);
 		}
 	}
+}
+
+
+std::vector<int> makeZBuffer(const TGAImage& outImage)
+{
+	// Make z-buffer and initialize it with minimum values.
+	const auto pixelsCount = static_cast<size_t>(outImage.get_width() * outImage.get_height());
+	return std::vector<int>(pixelsCount, std::numeric_limits<int>::min());
 }
