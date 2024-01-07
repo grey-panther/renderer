@@ -293,9 +293,11 @@ bool computeFragment(
 	}
 
 	// Get the color from the texture using the calculated uv-coordinates.
-	const Vec3 uv = fragmentData.textureCoords;
-	const int u = static_cast<int>(std::round(uv.x * texture.get_width()));
-	const int v = static_cast<int>(std::round(uv.y * texture.get_height()));
+	Vec3 uv = fragmentData.textureCoords;
+	uv.x = std::clamp(uv.x, 0.f, 1.f);
+	uv.y = std::clamp(uv.y, 0.f, 1.f);
+	const int u = static_cast<int>(std::round(uv.x * (texture.get_width() - 1)));
+	const int v = static_cast<int>(std::round(uv.y * (texture.get_height() - 1)));
 	const TGAColor textureColor = texture.get(u, v);
 
 	// Shade the color according to the calculated light intensity.
