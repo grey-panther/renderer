@@ -5,6 +5,15 @@
 
 #include <algorithm>
 #include <array>
+#include <limits>
+
+
+ZBuffer makeZBuffer(const TGAImage& outImage)
+{
+	// Make z-buffer and initialize it with lowest values.
+	const auto pixelsCount = static_cast<size_t>(outImage.get_width() * outImage.get_height());
+	return std::vector<float>(pixelsCount, std::numeric_limits<float>::lowest());
+}
 
 
 // Рисует линию по алгоритму Брезенхэма с int вычислениями
@@ -160,7 +169,7 @@ void sortByX(std::array<Vec3, 3>& points)
 }
 
 
-void drawTriangle(const Vec3& p1, const Vec3& p2, const Vec3& p3, std::vector<int>& zBuffer, TGAImage& image,
+void drawTriangle(const Vec3& p1, const Vec3& p2, const Vec3& p3, ZBuffer& zBuffer, TGAImage& image,
 				  const TGAColor& color)
 {
 	std::array<Vec3, 3> points = {p1, p2, p3};
@@ -205,7 +214,7 @@ void drawTriangle(const Vec3& p1, const Vec3& p2, const Vec3& p3, std::vector<in
 
 // Рисует линию по алгоритму Брезенхэма с int вычислениями
 // Не рисует точки, чья глубина больше указанной в массиве zBuffer
-void drawLineWithDepthMask(int x0, int y0, int z0, int x1, int y1, int z1, std::vector<int>& zBuffer, TGAImage& image,
+void drawLineWithDepthMask(int x0, int y0, int z0, int x1, int y1, int z1, ZBuffer& zBuffer, TGAImage& image,
 						   const TGAColor color)
 {
 	const int imageWidth = image.get_width();
@@ -418,7 +427,7 @@ std::tuple<Vec3, bool> calculateClipSpaceBarycentricCoordinates(
 
 void drawTriangle(
 		std::array<VertexData, 3> vertices,
-		std::vector<int>& zBuffer,
+		ZBuffer& zBuffer,
 		TGAImage& outImage,
 		const Vec3& lightVector,
 		const TGAImage& texture
@@ -494,11 +503,10 @@ void drawTriangle(
 				continue;
 			}
 
-			const float preciseZ =
+			const float z =
 					vertices[0].position.z * barycentricPos.x
 					+ vertices[1].position.z * barycentricPos.y
 					+ vertices[2].position.z * barycentricPos.z;
-			const int z = static_cast<int>(std::round(preciseZ));
 
 			// Check by z-buffer whether we can draw the fragment (the pixel) or not.
 			if (z <= zBuffer[pixelIndex]) {
@@ -508,7 +516,7 @@ void drawTriangle(
 			VertexData fragmentData;
 
 			// Set the fragment position in the output image space.
-			fragmentData.screenSpacePosition = Vec3i(x, y, z);
+			fragmentData.screenSpacePosition = Vec3i(x, y, static_cast<int>(std::round(z)));
 
 			// Interpolate the fragment attributes.
 			fragmentData.normal =

@@ -8,7 +8,6 @@
 #include "Vec4.hpp"
 
 #include <iostream>
-#include <limits>
 
 
 static const TGAColor WHITE_COLOR = TGAColor(255, 255, 255, 255);
@@ -27,7 +26,7 @@ void drawModelFaces(
 		const TGAImage& texture,
 		const Mat4& transform,
 		TGAImage& outImage,
-		std::vector<int>& zBuffer
+		ZBuffer& zBuffer
 );
 
 Mat4 getViewportMatrix(int width, int height);
@@ -37,8 +36,6 @@ Mat4 getProjectionMatrix();
 Mat4 getViewMatrix();
 
 Mat4 getModelTransformMatrix();
-
-std::vector<int> makeZBuffer(const TGAImage& outImage);
 
 
 int main()
@@ -77,7 +74,7 @@ int main()
 	const Mat4 modelMatrix = getModelTransformMatrix();
 	const Mat4 resultMatrix = viewportMatrix * projectionMatrix * viewMatrix * modelMatrix;
 
-	std::vector<int> zBuffer = makeZBuffer(outputImage);
+	ZBuffer zBuffer = makeZBuffer(outputImage);
 
 	drawModelFaces(floorModel, floorTexture, resultMatrix, outputImage, zBuffer);
 
@@ -213,7 +210,7 @@ void drawModelFaces(
 		const TGAImage& texture,
 		const Mat4& transform,
 		TGAImage& outImage,
-		std::vector<int>& zBuffer
+		ZBuffer& zBuffer
 )
 {
 	const auto imageSize = outImage.get_width() * outImage.get_height();
@@ -309,12 +306,4 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& tr
 			drawLine(x0, y0, x1, y1, image, WHITE_COLOR);
 		}
 	}
-}
-
-
-std::vector<int> makeZBuffer(const TGAImage& outImage)
-{
-	// Make z-buffer and initialize it with minimum values.
-	const auto pixelsCount = static_cast<size_t>(outImage.get_width() * outImage.get_height());
-	return std::vector<int>(pixelsCount, std::numeric_limits<int>::min());
 }

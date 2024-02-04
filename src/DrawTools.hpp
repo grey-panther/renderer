@@ -9,6 +9,10 @@
 #include <vector>
 
 
+using ZBuffer = std::vector<float>;
+
+ZBuffer makeZBuffer(const TGAImage& outImage);
+
 void drawLine(int x0, int y0, int x1, int y1, TGAImage& image, const TGAColor& color);
 
 void drawLine(const Vec2i& p1, const Vec2i& p2, TGAImage& image, const TGAColor& color);
@@ -20,7 +24,7 @@ void drawLineWithDepthMask(
 		int x1,
 		int y1,
 		int z1,
-		std::vector<int>& zBuffer,
+		ZBuffer& zBuffer,
 		TGAImage& image,
 		const TGAColor color
 );
@@ -30,7 +34,7 @@ void drawTriangle(
 		const Vec3& p1,
 		const Vec3& p2,
 		const Vec3& p3,
-		std::vector<int>& zBuffer,
+		ZBuffer& zBuffer,
 		TGAImage& image,
 		const TGAColor& color
 );
@@ -59,7 +63,7 @@ bool computeFragment(
 
 void drawTriangle(
 		std::array<VertexData, 3> vertices,
-		std::vector<int>& zBuffer,
+		ZBuffer& zBuffer,
 		TGAImage& outImage,
 		const Vec3& lightVector,
 		const TGAImage& texture
