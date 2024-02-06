@@ -31,11 +31,13 @@ void drawModelFaces(
 
 Mat4 getViewportMatrix(int width, int height);
 
+Mat4 getAxesViewportMatrix(int width, int height);
+
 Mat4 getProjectionMatrix();
 
 Mat4 getViewMatrix();
 
-Mat4 getModelTransformMatrix();
+Mat4 getHeadModelTransformMatrix();
 
 
 int main()
@@ -71,20 +73,35 @@ int main()
 	const Mat4 viewportMatrix = getViewportMatrix(outputImage.get_width(), outputImage.get_height());
 	const Mat4 projectionMatrix = getProjectionMatrix();
 	const Mat4 viewMatrix = getViewMatrix();
-	const Mat4 modelMatrix = getModelTransformMatrix();
-	const Mat4 resultMatrix = viewportMatrix * projectionMatrix * viewMatrix * modelMatrix;
+	const Mat4 viewProjViewportMatrix = viewportMatrix * projectionMatrix * viewMatrix;
 
 	ZBuffer zBuffer = makeZBuffer(outputImage);
 
-	drawModelFaces(floorModel, floorTexture, resultMatrix, outputImage, zBuffer);
+	/*
+	// Draw two crossed planes.
+	const Mat4 plane1Transform = viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationX(PI / 2);
+	drawModelFaces(floorModel, floorTexture, plane1Transform, outputImage, zBuffer);
+	const Mat4 plane2Transform = viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationZ(PI / 2);
+	drawModelFaces(floorModel, floorTexture, plane2Transform, outputImage, zBuffer);
+	 */
 
-	drawModelFaces(headModel, headTexture, resultMatrix, outputImage, zBuffer);
-	drawModelFaces(eyeInnerModel, eyeInnerTexture, resultMatrix, outputImage, zBuffer);
+	// Draw horizontal floor.
+	const Mat4 floorTransform = viewProjViewportMatrix * getHeadModelTransformMatrix() * Transform::makeTranslation({0.f, -1.f, 0.f});
+	drawModelFaces(floorModel, floorTexture, floorTransform, outputImage, zBuffer);
 
-//	drawModelEdges(outputImage, headModel, resultMatrix);
+	// Draw head.
+	const Mat4 headTransform = viewProjViewportMatrix * getHeadModelTransformMatrix();
+	drawModelFaces(headModel, headTexture, headTransform, outputImage, zBuffer);
+	drawModelFaces(eyeInnerModel, eyeInnerTexture, headTransform, outputImage, zBuffer);
 
-	// Draw base axes in (0,0,0) in world coordinates
-	drawAxes(outputImage, viewportMatrix * projectionMatrix * viewMatrix);
+	/*
+	// Draw wired head.
+	drawModelEdges(outputImage, headModel, headTransform);
+	 */
+
+	// Draw basic axes.
+	const Mat4 axesViewportMatrix = getAxesViewportMatrix(outputImage.get_width(), outputImage.get_height());
+	drawAxes(outputImage, axesViewportMatrix * projectionMatrix * viewMatrix);
 
 	outputImage.flip_vertically(); // origin at the left bottom corner of the outputImage
 	outputImage.write_tga_file("output.tga");
@@ -154,19 +171,37 @@ Mat4 getViewportMatrix(int width, int height)
 }
 
 
+Mat4 getAxesViewportMatrix(int width, int height)
+{
+	// from coordinates in [-1; 1], [-1; 1] to coordinates in [0, width], [0, height]
+	// s - size
+	// The matrix translates world point (0, 0) to the left bottom corner of the screen.
+	const auto s = static_cast<float>(std::min<int>(width, height));
+	const auto w = static_cast<float>(width);
+	const auto h = static_cast<float>(height);
+	const Mat4 matrix {
+			s/2,	0,		0,		w/5,
+			0,		s/2,	0,		h/5,
+			0,		0,		s/2,	0,
+			0,		0,		0, 		1,
+	};
+	return matrix;
+}
+
+
 Mat4 getViewMatrix()
 {
 	const Mat4 viewRotationX = Transform::makeRotationX(PI / 8); // PI / 8;
 	const Mat4 viewRotationY = Transform::makeRotationY(0.f); // -PI / 4;
 	const Mat4 viewScale = Transform::makeScale(0.35f);
-	const Mat4 viewTranslation = Transform::makeTranslation(Vec3(0.f, -0.5f, -0.3f));
+	const Mat4 viewTranslation = Transform::makeTranslation(Vec3(0.f, 0.0f, -0.3f));
 
 	const Mat4 viewMatrix = viewTranslation * viewScale * viewRotationX * viewRotationY;
 	return viewMatrix;
 }
 
 
-Mat4 getModelTransformMatrix()
+Mat4 getHeadModelTransformMatrix()
 {
 	const Mat4 rotationMatrixX = Transform::makeRotationX(0);
 	const Mat4 rotationMatrixY = Transform::makeRotationY(0);
@@ -174,8 +209,8 @@ Mat4 getModelTransformMatrix()
 
 	const Mat4 scaleMatrix = Transform::makeScale(2.f);
 
-	// Позиция в мировых координатах - центр image.
-	const Vec3 t {0.f, 2.f, 0.f};
+	// Position of model in world space.
+	const Vec3 t {0.f, 0.f, 0.f};
 	const Mat4 translationMatrix = Transform::makeTranslation(t);
 
 	// Next transformations are applied in order from right to left:
