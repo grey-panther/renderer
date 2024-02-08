@@ -68,7 +68,7 @@ int main()
 	const int OUTPUT_IMAGE_HEIGHT = 1080;
 	TGAImage outputImage(OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_HEIGHT, TGAImage::RGB);
 
-//	drawPlayground(outputImage);
+	drawPlayground(outputImage);
 
 	const Mat4 viewportMatrix = getViewportMatrix(outputImage.get_width(), outputImage.get_height());
 	const Mat4 projectionMatrix = getProjectionMatrix();
@@ -110,22 +110,42 @@ int main()
 }
 
 
-// Упражнения из статей 1-3.
-void drawPlayground(TGAImage& image)
+void drawPlayground(TGAImage& outputImage)
 {
-	const Vec3i p1(180, 50, 0);
-	const Vec3i p2(150, 1, 0);
-	const Vec3i p3(70, 180, 0);
-	drawLine(p1.xy(), p2.xy(), image, RED_COLOR);
-	drawLine(p1.xy(), p3.xy(), image, RED_COLOR);
-	drawLine(p2.xy(), p3.xy(), image, RED_COLOR);
-//	drawTriangle(p1, p2, p3, {}, image, WHITE_COLOR);
-//	drawTriangle(p3, p1, Vec3i(210, 80), {}, image, GREEN_COLOR);
+	if (false) {
+		// Exercises from the articles 1-3.
+		const Vec3i p1(180, 50, 0);
+		const Vec3i p2(150, 1, 0);
+		const Vec3i p3(70, 180, 0);
+		drawLine(p1.xy(), p2.xy(), outputImage, RED_COLOR);
+		drawLine(p1.xy(), p3.xy(), outputImage, RED_COLOR);
+		drawLine(p2.xy(), p3.xy(), outputImage, RED_COLOR);
+//		drawTriangle(p1, p2, p3, {}, outputImage, WHITE_COLOR);
+//		drawTriangle(p3, p1, Vec3i(210, 80), {}, outputImage, GREEN_COLOR);
+	}
 
-	Vec3 p4(180, 50, 0);
-	Vec3 p5(150, 1, 0);
-	Vec3 p6(70, 180, 0);
-//	drawTriangle(p4, p5, p6, image, WHITE_COLOR);
+	if (false) {
+		// An exercise from the article 4.в: https://habr.com/ru/articles/249467/
+
+		// Draw a triangle to test that barycentric coordinates may be used to rasterize a triangle.
+		// It should be iterated through the bounding rect of the triangle, not through the entire screen rect.
+		Vec2i A(10, 10);
+		Vec2i B(100, 30);
+		Vec2i C(190, 160);
+		for (int x = 0; x < outputImage.get_width(); ++x) {
+			for (int y = 0; y < outputImage.get_height(); ++y) {
+				const auto& [bar, success] = calculateBarycentricCoordinates(A, B, C, Vec2i(x, y));
+				if (!success) {
+					continue;
+				}
+				if ((bar.x < 0.f) || (bar.y < 0.f) || (bar.z < 0.f)) {
+					// The point (x, y) is out of triangle borders
+					continue;
+				}
+				outputImage.set(x, y, RED_COLOR);
+			}
+		}
+	}
 }
 
 
