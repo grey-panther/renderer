@@ -8,6 +8,7 @@
 #include "Vec4.hpp"
 
 #include <iostream>
+#include <tuple>
 
 
 static const TGAColor WHITE_COLOR = TGAColor(255, 255, 255, 255);
