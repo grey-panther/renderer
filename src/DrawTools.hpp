@@ -9,6 +9,8 @@
 #include <vector>
 
 
+class Shader;
+
 using ZBuffer = std::vector<float>;
 
 ZBuffer makeZBuffer(const TGAImage& outImage);
@@ -26,7 +28,7 @@ void drawLineWithDepthMask(
 		int z1,
 		ZBuffer& zBuffer,
 		TGAImage& image,
-		const TGAColor color
+		const TGAColor& color
 );
 
 // TODO Deprecated function.
@@ -50,23 +52,11 @@ public:
 	Vec3 normal;
 };
 
-VertexData computeVertex(const VertexData& inVertexData, const Mat4& transform, const Mat4& normalsTransform);
-
-// Return true if the fragment was drawn.
-// Return false if the fragment wasn't drawn and should not affect z-buffer.
-bool computeFragment(
-		const VertexData& fragmentData,
-		TGAImage& outImage,
-		const Vec3& lightVector,
-		const TGAImage& texture
-);
-
 void drawTriangle(
 		std::array<VertexData, 3> vertices,
+		const Shader& shader,
 		ZBuffer& zBuffer,
-		TGAImage& outImage,
-		const Vec3& lightVector,
-		const TGAImage& texture
+		TGAImage& outImage
 );
 
 /**

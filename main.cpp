@@ -1,5 +1,6 @@
 #include "DrawTools.hpp"
 #include "ObjFormatModel.hpp"
+#include "Shader.hpp"
 #include "Mat4.hpp"
 #include "MathTests.hpp"
 #include "Transform.hpp"
@@ -279,13 +280,17 @@ void drawModelFaces(
 	const std::vector<Vec3>& modelNormals = model.getNormals();
 	assertFalse(modelNormals.empty());
 
-	const Vec3 lightVector(0, 0, 1);
-
 	// When we use only affine transformations (without perspective distortions),
 	// we can transform normals multiplying them by the transformMatrix as we do with vertex positions.
 	// It works because the inverse is equal to the transpose, and the transposed inverse of matrix M is M itself.
 	// Otherwise, we must multiply transform normals by the transposed inverse of transformMatrix.
-	const Mat4& normalsTransform = transform.getInverse().getTransposed();
+	const Mat4 normalsTransform = transform.getInverse().getTransposed();
+
+	Shader shader;
+	shader.transform = transform;
+	shader.normalsTransform = normalsTransform;
+	shader.lightVector = Vec3(0, 0, 1);
+	shader.texture = texture;
 
 	for (const ModelFace& face : modelFaces) {
 		const ModelFace::Indices& posIndices = face.getCoordsIndices();
@@ -307,7 +312,7 @@ void drawModelFaces(
 
 		std::array<VertexData, 3> vertices;
 		for (int i = 0; i < inVertexArray.size(); ++i) {
-			vertices[i] = computeVertex(inVertexArray[i], transform, normalsTransform);
+			vertices[i] = shader.computeVertex(inVertexArray[i]);
 			auto& vertex = vertices[i];
 
 			// Transform coordinates from homogeneous to 3D-cartesian ones (make w == 1).
@@ -316,10 +321,9 @@ void drawModelFaces(
 
 		drawTriangle(
 				vertices,
+				shader,
 				zBuffer,
-				outImage,
-				lightVector,
-				texture
+				outImage
 		);
 	}
 }
