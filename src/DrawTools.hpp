@@ -13,6 +13,8 @@ class Shader;
 
 using ZBuffer = std::vector<float>;
 
+static constexpr int TRIANGLE_VERTICES_COUNT = 3;
+
 ZBuffer makeZBuffer(const TGAImage& outImage);
 
 void drawLine(int x0, int y0, int x1, int y1, TGAImage& image, const TGAColor& color);
@@ -53,7 +55,7 @@ public:
 };
 
 void drawTriangle(
-		std::array<VertexData, 3> vertices,
+		const std::array<VertexData, TRIANGLE_VERTICES_COUNT>& vertices,
 		const Shader& shader,
 		ZBuffer& zBuffer,
 		TGAImage& outImage

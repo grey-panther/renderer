@@ -378,12 +378,22 @@ std::tuple<Vec3, bool> calculateClipSpaceBarycentricCoordinates(
 
 
 void drawTriangle(
-		std::array<VertexData, 3> vertices,
+		const std::array<VertexData, TRIANGLE_VERTICES_COUNT>& inVertices,
 		const Shader& shader,
 		ZBuffer& zBuffer,
 		TGAImage& outImage
 )
 {
+	// Compute vertices and perform the perspective division.
+	std::array<VertexData, TRIANGLE_VERTICES_COUNT> vertices;
+	for (int i = 0; i < inVertices.size(); ++i) {
+		vertices[i] = shader.computeVertex(inVertices[i]);
+		auto& vertex = vertices[i];
+
+		// Transform coordinates from homogeneous to 3D-cartesian ones (make w == 1).
+		vertex.screenSpacePosition = (vertex.position.xyz() / vertex.position.w).rounded();
+	}
+
 	// Sort the vertices in order of ascending X.
 	std::sort(vertices.begin(), vertices.end(), [](const VertexData& v1, const VertexData& v2) {
 		return v1.screenSpacePosition.x < v2.screenSpacePosition.x;

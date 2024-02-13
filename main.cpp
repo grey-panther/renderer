@@ -296,9 +296,9 @@ void drawModelFaces(
 		const ModelFace::Indices& posIndices = face.getCoordsIndices();
 		const ModelFace::Indices& texCoordsIndices = face.getTextureCoordsIndices();
 		const ModelFace::Indices& normalIndices = face.getNormalsIndices();
-		static_assert(ModelFace::FACE_VERTEXES_COUNT == 3);
+		static_assert(ModelFace::FACE_VERTEXES_COUNT == TRIANGLE_VERTICES_COUNT);
 
-		std::array<VertexData, 3> inVertexArray;
+		std::array<VertexData, TRIANGLE_VERTICES_COUNT> inVertexArray;
 		for (int i = 0; i < inVertexArray.size(); ++i) {
 			// Get the normalized position of the vertex in model space.
 			inVertexArray[i].position = modelPositions[posIndices[i]];
@@ -310,17 +310,8 @@ void drawModelFaces(
 			inVertexArray[i].normal = modelNormals[normalIndices[i]];
 		}
 
-		std::array<VertexData, 3> vertices;
-		for (int i = 0; i < inVertexArray.size(); ++i) {
-			vertices[i] = shader.computeVertex(inVertexArray[i]);
-			auto& vertex = vertices[i];
-
-			// Transform coordinates from homogeneous to 3D-cartesian ones (make w == 1).
-			vertex.screenSpacePosition = (vertex.position.xyz() / vertex.position.w).rounded();
-		}
-
 		drawTriangle(
-				vertices,
+				inVertexArray,
 				shader,
 				zBuffer,
 				outImage
