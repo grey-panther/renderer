@@ -290,7 +290,7 @@ void drawModelFaces(
 	shader.transform = transform;
 	shader.normalsTransform = normalsTransform;
 	shader.lightVector = Vec3(0, 0, 1);
-	shader.texture = texture;
+	shader.texture = TextureSampler(texture);
 
 	for (const ModelFace& face : modelFaces) {
 		const ModelFace::Indices& posIndices = face.getCoordsIndices();

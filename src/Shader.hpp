@@ -2,7 +2,7 @@
 
 #include "Mat4.hpp"
 #include "Vec3.hpp"
-
+#include "TextureSampler.hpp"
 #include <tgaimage.h>
 
 
@@ -27,5 +27,5 @@ public:
 
 	Vec3 lightVector;
 
-	TGAImage texture;
+	TextureSampler texture;
 };
