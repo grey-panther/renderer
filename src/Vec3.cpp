@@ -1,4 +1,6 @@
 #include "Vec3.hpp"
+
+#include "Math.hpp"
 #include "Vec3i.hpp"
 
 #include <ostream>
@@ -6,9 +8,9 @@
 
 
 Vec3::Vec3(const Vec3i& intVec)
-		: x(intVec.x)
-		, y(intVec.y)
-		, z(intVec.z)
+		: x(static_cast<float>(intVec.x))
+		, y(static_cast<float>(intVec.y))
+		, z(static_cast<float>(intVec.z))
 {
 }
 
@@ -60,12 +62,12 @@ Vec3& Vec3::operator-=(const Vec3& other)
 
 Vec3& Vec3::normalize()
 {
-	float length = this->length();
-	if (length <= 0.0000001) {
+	const float length = this->length();
+	if (length <= DEFAULT_EPSILON) {
 		return *this;
 	}
 
-	float inverseLength = 1 / length;
+	const float inverseLength = 1.f / length;
 
 	x *= inverseLength;
 	y *= inverseLength;

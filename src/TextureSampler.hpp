@@ -1,5 +1,6 @@
 #pragma once
 
+#include "forwards.hpp"
 #include <tgaimage.h>
 
 
@@ -17,6 +18,9 @@ public:
 
 	[[nodiscard]]
 	TGAColor get(float u, float v) const;
+
+	[[nodiscard]]
+	TGAColor get(const Vec2& uv) const;
 
 private:
 	TGAImage _texture;

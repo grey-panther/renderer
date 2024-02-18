@@ -304,7 +304,8 @@ void drawModelFaces(
 			inVertexArray[i].position = modelPositions[posIndices[i]];
 
 			// Get the texture normalized coordinates.
-			inVertexArray[i].textureCoords = modelTextureCoordinates[texCoordsIndices[i]];
+			const Vec3& texCoords = modelTextureCoordinates[texCoordsIndices[i]];
+			inVertexArray[i].textureCoords = Vec2(texCoords.x, texCoords.y);
 
 			// Get the normal vector of the vertex in model space.
 			inVertexArray[i].normal = modelNormals[normalIndices[i]];

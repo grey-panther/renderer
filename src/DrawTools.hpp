@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vec2.hpp"
 #include "Vec2i.hpp"
 #include "Vec3.hpp"
 #include "Vec3i.hpp"
@@ -50,7 +51,7 @@ struct VertexData
 public:
 	Vec4 position;
 	Vec3i screenSpacePosition;
-	Vec3 textureCoords;
+	Vec2 textureCoords;
 	Vec3 normal;
 };
 

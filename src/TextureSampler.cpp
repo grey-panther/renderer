@@ -1,5 +1,6 @@
 #include "TextureSampler.hpp"
 
+#include "Vec2.hpp"
 #include <cmath>
 
 
@@ -24,4 +25,10 @@ TGAColor TextureSampler::get(float u, float v) const
 	const int y = static_cast<int>(std::round(clampedV * static_cast<float>(_texture.get_height() - 1)));
 
 	return _texture.get(x, y);
+}
+
+
+TGAColor TextureSampler::get(const Vec2& uv) const
+{
+	return get(uv.x, uv.y);
 }

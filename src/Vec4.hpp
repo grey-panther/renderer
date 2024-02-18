@@ -31,6 +31,7 @@ public:
 
 	Vec4& operator-=(const Vec4& other);
 
+	[[nodiscard]]
 	Vec3 xyz() const;
 };
 
@@ -39,6 +40,9 @@ Vec4 operator+(const Vec4& v1, const Vec4& v2);
 Vec4 operator-(const Vec4& v1, const Vec4& v2);
 
 Vec4 operator*(float multiplier, const Vec4& v);
+
+[[nodiscard]]
+inline Vec4 operator*(const Vec4& v, float multiplier) { return operator*(multiplier, v); }
 
 Vec4 operator/(const Vec4& v, float divider);
 

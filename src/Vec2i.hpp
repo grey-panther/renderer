@@ -1,5 +1,7 @@
 #pragma once
 
+#include "forwards.hpp"
+
 
 struct Vec2i
 {
@@ -14,6 +16,8 @@ struct Vec2i
 			: x(scalar)
 			, y(scalar)
 	{}
+
+	explicit Vec2i(const Vec2& floatVec);
 
 public:
 	int x = 0;

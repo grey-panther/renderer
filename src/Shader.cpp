@@ -35,8 +35,7 @@ bool Shader::computeFragment(
 	}
 
 	// Get the color from the texture using the calculated uv-coordinates.
-	const Vec3& uv = fragmentData.textureCoords;
-	const TGAColor textureColor = texture.get(uv.x, uv.y);
+	const TGAColor textureColor = texture.get(fragmentData.textureCoords);
 
 	// Shade the color according to the calculated light intensity.
 	const auto r = static_cast<unsigned char>(textureColor.r * lightIntensity);
