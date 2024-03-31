@@ -21,10 +21,7 @@ VertexData Shader::computeVertex(
 }
 
 
-bool Shader::computeFragment(
-		const VertexData& fragmentData,
-		TGAImage& outImage
-) const
+std::pair<bool, Vec4> Shader::computeFragment(const VertexData& fragmentData) const
 {
 	// Calculate the light intensity on the fragment.
 	// A normal vector may become a non-unit vector after fragment interpolation.
@@ -35,14 +32,12 @@ bool Shader::computeFragment(
 	}
 
 	// Get the color from the texture using the calculated uv-coordinates.
-	const TGAColor textureColor = texture.get(fragmentData.textureCoords);
+	const Vec4 textureColor = texture.get(fragmentData.textureCoords);
 
 	// Shade the color according to the calculated light intensity.
-	const auto r = static_cast<unsigned char>(textureColor.r * lightIntensity);
-	const auto g = static_cast<unsigned char>(textureColor.g * lightIntensity);
-	const auto b = static_cast<unsigned char>(textureColor.b * lightIntensity);
+	const auto r = textureColor.x * lightIntensity;
+	const auto g = textureColor.y * lightIntensity;
+	const auto b = textureColor.z * lightIntensity;
 
-	outImage.set(fragmentData.screenSpacePosition.x, fragmentData.screenSpacePosition.y, TGAColor(r, g, b, 255));
-
-	return true;
+	return {true, Vec4(r, g, b, 1.f)};
 }

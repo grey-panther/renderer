@@ -9,18 +9,24 @@
  */
 class TextureSampler
 {
-	static const TGAColor ERROR_COLOR;
+	static const Vec4 ERROR_COLOR;
 
 public:
 	TextureSampler() = default;
 
 	explicit TextureSampler(const TGAImage& texture);
 
+	/**
+	 * @brief Get normalized color (0-1) at the given normalized texture coordinates.
+	 */
 	[[nodiscard]]
-	TGAColor get(float u, float v) const;
+	Vec4 get(float u, float v) const;
 
+	/**
+	 * @brief Get normalized color (0-1) at the given normalized texture coordinates.
+	 */
 	[[nodiscard]]
-	TGAColor get(const Vec2& uv) const;
+	Vec4 get(const Vec2& uv) const;
 
 private:
 	TGAImage _texture;

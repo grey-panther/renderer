@@ -1,5 +1,6 @@
 #pragma once
 
+#include "forwards.hpp"
 #include "Mat4.hpp"
 #include "Vec3.hpp"
 #include "TextureSampler.hpp"
@@ -15,10 +16,11 @@ public:
 	VertexData computeVertex(const VertexData& inVertexData) const;
 
 	/**
-	 * @brief Compute the fragment color and put it to the outImage.
-	 * @return true if the fragment was drawn; false if the fragment wasn't drawn and should not affect z-buffer.
+	 * @brief Compute the fragment and return its color.
+	 * @return [needDraw, color]
 	 */
-	bool computeFragment(const VertexData& fragmentData, TGAImage& outImage) const;
+	[[nodiscard]]
+	std::pair<bool, Vec4> computeFragment(const VertexData& fragmentData) const;
 
 public:
 	Mat4 transform;
