@@ -1,7 +1,7 @@
 #include "DrawTools.hpp"
 
 #include "Mat4.hpp"
-#include "Shader.hpp"
+#include "shaders/IShader.hpp"
 #include "Utilities.hpp"
 
 #include <algorithm>
@@ -379,7 +379,7 @@ std::tuple<Vec3, bool> calculateClipSpaceBarycentricCoordinates(
 
 void drawTriangle(
 		const std::array<VertexData, TRIANGLE_VERTICES_COUNT>& inVertices,
-		const Shader& shader,
+		const IShader& shader,
 		ZBuffer& zBuffer,
 		TGAImage& outImage
 )

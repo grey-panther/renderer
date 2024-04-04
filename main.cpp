@@ -1,6 +1,6 @@
 #include "DrawTools.hpp"
 #include "ObjFormatModel.hpp"
-#include "Shader.hpp"
+#include "shaders/SimpleLightShader.hpp"
 #include "Mat4.hpp"
 #include "MathTests.hpp"
 #include "Transform.hpp"
@@ -286,7 +286,7 @@ void drawModelFaces(
 	// Otherwise, we must multiply transform normals by the transposed inverse of transformMatrix.
 	const Mat4 normalsTransform = transform.getInverse().getTransposed();
 
-	Shader shader;
+	SimpleLightShader shader;
 	shader.transform = transform;
 	shader.normalsTransform = normalsTransform;
 	shader.lightVector = Vec3(0, 0, 1);

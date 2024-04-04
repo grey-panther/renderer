@@ -3,24 +3,24 @@
 #include "forwards.hpp"
 #include "Mat4.hpp"
 #include "Vec3.hpp"
+#include "shaders/IShader.hpp"
 #include "TextureSampler.hpp"
-#include <tgaimage.h>
 
 
 class VertexData;
 
-class Shader
+class SimpleLightShader : public IShader
 {
 public:
 	[[nodiscard]]
-	VertexData computeVertex(const VertexData& inVertexData) const;
+	VertexData computeVertex(const VertexData& inVertexData) const override;
 
 	/**
 	 * @brief Compute the fragment and return its color.
 	 * @return [needDraw, color]
 	 */
 	[[nodiscard]]
-	std::pair<bool, Vec4> computeFragment(const VertexData& fragmentData) const;
+	std::pair<bool, Vec4> computeFragment(const VertexData& fragmentData) const override;
 
 public:
 	Mat4 transform;

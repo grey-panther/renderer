@@ -10,7 +10,7 @@
 #include <vector>
 
 
-class Shader;
+class IShader;
 
 using ZBuffer = std::vector<float>;
 
@@ -56,8 +56,8 @@ public:
 };
 
 void drawTriangle(
-		const std::array<VertexData, TRIANGLE_VERTICES_COUNT>& vertices,
-		const Shader& shader,
+		const std::array<VertexData, TRIANGLE_VERTICES_COUNT>& inVertices,
+		const IShader& shader,
 		ZBuffer& zBuffer,
 		TGAImage& outImage
 );

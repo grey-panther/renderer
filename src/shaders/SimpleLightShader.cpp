@@ -1,11 +1,11 @@
-#include "Shader.hpp"
+#include "SimpleLightShader.hpp"
 
 // Include to get VertexData:
 #include "DrawTools.hpp"
 #include "Mat4.hpp"
 
 
-VertexData Shader::computeVertex(
+VertexData SimpleLightShader::computeVertex(
 		const VertexData& inVertexData
 ) const
 {
@@ -21,7 +21,7 @@ VertexData Shader::computeVertex(
 }
 
 
-std::pair<bool, Vec4> Shader::computeFragment(const VertexData& fragmentData) const
+std::pair<bool, Vec4> SimpleLightShader::computeFragment(const VertexData& fragmentData) const
 {
 	// Calculate the light intensity on the fragment.
 	// A normal vector may become a non-unit vector after fragment interpolation.
