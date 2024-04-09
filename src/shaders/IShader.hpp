@@ -4,8 +4,6 @@
 #include "TextureSampler.hpp"
 
 
-class VertexData;
-
 /**
  * Interface for a shader implementation.
  */

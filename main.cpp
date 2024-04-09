@@ -1,6 +1,7 @@
 #include "DrawTools.hpp"
 #include "ObjFormatModel.hpp"
 #include "shaders/SimpleLightShader.hpp"
+#include "shaders/MonochromeShader.hpp"
 #include "Mat4.hpp"
 #include "MathTests.hpp"
 #include "Transform.hpp"
@@ -9,6 +10,7 @@
 #include "Vec4.hpp"
 
 #include <iostream>
+#include <memory>
 #include <tuple>
 
 
@@ -286,11 +288,28 @@ void drawModelFaces(
 	// Otherwise, we must multiply transform normals by the transposed inverse of transformMatrix.
 	const Mat4 normalsTransform = transform.getInverse().getTransposed();
 
-	SimpleLightShader shader;
-	shader.transform = transform;
-	shader.normalsTransform = normalsTransform;
-	shader.lightVector = Vec3(0, 0, 1);
-	shader.texture = TextureSampler(texture);
+	// Initialize a shader.
+	constexpr int usedShader = 0;
+	std::unique_ptr<IShader> shaderPtr;
+	if constexpr (usedShader == 0) {
+		auto shader = std::make_unique<SimpleLightShader>();
+		shader->transform = transform;
+		shader->normalsTransform = normalsTransform;
+		shader->lightVector = Vec3(0, 0, 1);
+		shader->texture = TextureSampler(texture);
+		shaderPtr = std::move(shader);
+	}
+	else {
+		auto shader = std::make_unique<MonochromeShader>();
+		shader->transform = transform;
+		shader->normalsTransform = normalsTransform;
+		shader->lightVector = Vec3(0, 0, 1);
+		shaderPtr = std::move(shader);
+	}
+	assertTrueMsg(shaderPtr != nullptr, "Shader must be set before rendering.");
+	if (!shaderPtr) {
+		return;
+	}
 
 	for (const ModelFace& face : modelFaces) {
 		const ModelFace::Indices& posIndices = face.getCoordsIndices();
@@ -313,7 +332,7 @@ void drawModelFaces(
 
 		drawTriangle(
 				inVertexArray,
-				shader,
+				*shaderPtr,
 				zBuffer,
 				outImage
 		);

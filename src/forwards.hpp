@@ -11,3 +11,5 @@ struct Vec3;
 struct Vec4;
 
 struct Mat4;
+
+struct VertexData;
