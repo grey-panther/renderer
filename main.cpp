@@ -1,7 +1,8 @@
 #include "DrawTools.hpp"
 #include "ObjFormatModel.hpp"
-#include "shaders/SimpleLightShader.hpp"
 #include "shaders/MonochromeShader.hpp"
+#include "shaders/SimpleLightShader.hpp"
+#include "shaders/ToonShader.hpp"
 #include "Mat4.hpp"
 #include "MathTests.hpp"
 #include "Transform.hpp"
@@ -299,8 +300,15 @@ void drawModelFaces(
 		shader->texture = TextureSampler(texture);
 		shaderPtr = std::move(shader);
 	}
-	else {
+	else if constexpr (usedShader == 1) {
 		auto shader = std::make_unique<MonochromeShader>();
+		shader->transform = transform;
+		shader->normalsTransform = normalsTransform;
+		shader->lightVector = Vec3(0, 0, 1);
+		shaderPtr = std::move(shader);
+	}
+	else {
+		auto shader = std::make_unique<ToonShader>();
 		shader->transform = transform;
 		shader->normalsTransform = normalsTransform;
 		shader->lightVector = Vec3(0, 0, 1);
