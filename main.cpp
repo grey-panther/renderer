@@ -1,6 +1,7 @@
 #include "DrawTools.hpp"
 #include "ObjFormatModel.hpp"
 #include "shaders/MonochromeShader.hpp"
+#include "shaders/NormalMapShader.hpp"
 #include "shaders/SimpleLightShader.hpp"
 #include "shaders/ToonShader.hpp"
 #include "Mat4.hpp"
@@ -29,6 +30,7 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& tr
 void drawModelFaces(
 		const ObjFormatModel& model,
 		const TGAImage& texture,
+		const TGAImage* normalMap,
 		const Mat4& transform,
 		TGAImage& outImage,
 		ZBuffer& zBuffer
@@ -61,6 +63,9 @@ int main()
 	TGAImage headTexture(1024, 1024, TGAImage::RGB);
 	headTexture.read_tga_file("../assets/african_head_diffuse.tga");
 	headTexture.flip_vertically();
+	TGAImage headNormalMap(1024, 1024, TGAImage::RGB);
+	headNormalMap.read_tga_file("../assets/african_head_nm.tga");
+	headNormalMap.flip_vertically();
 
 	// Inner eyes.
 	const ObjFormatModel eyeInnerModel("../assets/african_head_eye_inner.obj");
@@ -85,19 +90,19 @@ int main()
 	/*
 	// Draw two crossed planes.
 	const Mat4 plane1Transform = viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationX(PI / 2);
-	drawModelFaces(floorModel, floorTexture, plane1Transform, outputImage, zBuffer);
+	drawModelFaces(floorModel, floorTexture, nullptr, plane1Transform, outputImage, zBuffer);
 	const Mat4 plane2Transform = viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationZ(PI / 2);
-	drawModelFaces(floorModel, floorTexture, plane2Transform, outputImage, zBuffer);
+	drawModelFaces(floorModel, floorTexture, nullptr, plane2Transform, outputImage, zBuffer);
 	 */
 
 	// Draw horizontal floor.
 	const Mat4 floorTransform = viewProjViewportMatrix * getHeadModelTransformMatrix() * Transform::makeTranslation({0.f, -1.f, 0.f});
-	drawModelFaces(floorModel, floorTexture, floorTransform, outputImage, zBuffer);
+	drawModelFaces(floorModel, floorTexture, nullptr, floorTransform, outputImage, zBuffer);
 
 	// Draw head.
 	const Mat4 headTransform = viewProjViewportMatrix * getHeadModelTransformMatrix();
-	drawModelFaces(headModel, headTexture, headTransform, outputImage, zBuffer);
-	drawModelFaces(eyeInnerModel, eyeInnerTexture, headTransform, outputImage, zBuffer);
+	drawModelFaces(headModel, headTexture, &headNormalMap, headTransform, outputImage, zBuffer);
+	drawModelFaces(eyeInnerModel, eyeInnerTexture, nullptr, headTransform, outputImage, zBuffer);
 
 	/*
 	// Draw wired head.
@@ -268,6 +273,7 @@ Mat4 getProjectionMatrix()
 void drawModelFaces(
 		const ObjFormatModel& model,
 		const TGAImage& texture,
+		const TGAImage* normalMap,
 		const Mat4& transform,
 		TGAImage& outImage,
 		ZBuffer& zBuffer
@@ -290,7 +296,7 @@ void drawModelFaces(
 	const Mat4 normalsTransform = transform.getInverse().getTransposed();
 
 	// Initialize a shader.
-	constexpr int usedShader = 0;
+	constexpr int usedShader = 3;
 	std::unique_ptr<IShader> shaderPtr;
 	if constexpr (usedShader == 0) {
 		auto shader = std::make_unique<SimpleLightShader>();
@@ -307,12 +313,31 @@ void drawModelFaces(
 		shader->lightVector = Vec3(0, 0, 1);
 		shaderPtr = std::move(shader);
 	}
-	else {
+	else if constexpr (usedShader == 2) {
 		auto shader = std::make_unique<ToonShader>();
 		shader->transform = transform;
 		shader->normalsTransform = normalsTransform;
 		shader->lightVector = Vec3(0, 0, 1);
 		shaderPtr = std::move(shader);
+	}
+	else {
+		if (normalMap != nullptr) {
+			auto shader = std::make_unique<NormalMapShader>();
+			shader->transform = transform;
+			shader->normalsTransform = normalsTransform;
+			shader->lightVector = Vec3(0, 0, 1);
+			shader->texture = TextureSampler(texture);
+			shader->normalMap = TextureSampler(*normalMap);
+			shaderPtr = std::move(shader);
+		}
+		else {
+			auto shader = std::make_unique<SimpleLightShader>();
+			shader->transform = transform;
+			shader->normalsTransform = normalsTransform;
+			shader->lightVector = Vec3(0, 0, 1);
+			shader->texture = TextureSampler(texture);
+			shaderPtr = std::move(shader);
+		}
 	}
 	assertTrueMsg(shaderPtr != nullptr, "Shader must be set before rendering.");
 	if (!shaderPtr) {
