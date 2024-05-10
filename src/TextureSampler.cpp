@@ -26,7 +26,18 @@ Vec4 TextureSampler::get(float u, float v) const
 	const int y = static_cast<int>(std::round(clampedV * static_cast<float>(_texture.get_height() - 1)));
 
 	const TGAColor tgaColor = _texture.get(x, y);
-	return Vec4(tgaColor.r / 255.f, tgaColor.g / 255.f, tgaColor.b / 255.f, tgaColor.a / 255.f);
+	switch (tgaColor.bytespp) {
+		case TGAImage::Format::RGBA:
+			return Vec4(tgaColor.r / 255.f, tgaColor.g / 255.f, tgaColor.b / 255.f, tgaColor.a / 255.f);
+		case TGAImage::Format::RGB:
+			return Vec4(tgaColor.r / 255.f, tgaColor.g / 255.f, tgaColor.b / 255.f, 1.f);
+		case TGAImage::Format::GRAYSCALE: {
+			const float normVal = tgaColor.val / 255.f;
+			return Vec4(normVal, normVal, normVal, 1.f);
+		}
+		default:
+			return ERROR_COLOR;
+	}
 }
 
 

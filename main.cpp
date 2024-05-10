@@ -2,6 +2,7 @@
 #include "ObjFormatModel.hpp"
 #include "shaders/MonochromeShader.hpp"
 #include "shaders/NormalMapShader.hpp"
+#include "shaders/PhongReflectionShader.hpp"
 #include "shaders/SimpleLightShader.hpp"
 #include "shaders/ToonShader.hpp"
 #include "Mat4.hpp"
@@ -31,6 +32,7 @@ void drawModelFaces(
 		const ObjFormatModel& model,
 		const TGAImage& texture,
 		const TGAImage* normalMap,
+		const TGAImage* specularMap,
 		const Mat4& transform,
 		TGAImage& outImage,
 		ZBuffer& zBuffer
@@ -66,6 +68,9 @@ int main()
 	TGAImage headNormalMap(1024, 1024, TGAImage::RGB);
 	headNormalMap.read_tga_file("../assets/african_head_nm.tga");
 	headNormalMap.flip_vertically();
+	TGAImage headSpecularMap(1024, 1024, TGAImage::GRAYSCALE);
+	headSpecularMap.read_tga_file("../assets/african_head_spec.tga");
+	headSpecularMap.flip_vertically();
 
 	// Inner eyes.
 	const ObjFormatModel eyeInnerModel("../assets/african_head_eye_inner.obj");
@@ -97,12 +102,12 @@ int main()
 
 	// Draw horizontal floor.
 	const Mat4 floorTransform = viewProjViewportMatrix * getHeadModelTransformMatrix() * Transform::makeTranslation({0.f, -1.f, 0.f});
-	drawModelFaces(floorModel, floorTexture, nullptr, floorTransform, outputImage, zBuffer);
+	drawModelFaces(floorModel, floorTexture, nullptr, nullptr, floorTransform, outputImage, zBuffer);
 
 	// Draw head.
 	const Mat4 headTransform = viewProjViewportMatrix * getHeadModelTransformMatrix();
-	drawModelFaces(headModel, headTexture, &headNormalMap, headTransform, outputImage, zBuffer);
-	drawModelFaces(eyeInnerModel, eyeInnerTexture, nullptr, headTransform, outputImage, zBuffer);
+	drawModelFaces(headModel, headTexture, &headNormalMap, &headSpecularMap, headTransform, outputImage, zBuffer);
+	drawModelFaces(eyeInnerModel, eyeInnerTexture, nullptr, nullptr, headTransform, outputImage, zBuffer);
 
 	/*
 	// Draw wired head.
@@ -274,6 +279,7 @@ void drawModelFaces(
 		const ObjFormatModel& model,
 		const TGAImage& texture,
 		const TGAImage* normalMap,
+		const TGAImage* specularMap,
 		const Mat4& transform,
 		TGAImage& outImage,
 		ZBuffer& zBuffer
@@ -296,7 +302,7 @@ void drawModelFaces(
 	const Mat4 normalsTransform = transform.getInverse().getTransposed();
 
 	// Initialize a shader.
-	constexpr int usedShader = 3;
+	constexpr int usedShader = 4;
 	std::unique_ptr<IShader> shaderPtr;
 	if constexpr (usedShader == 0) {
 		auto shader = std::make_unique<SimpleLightShader>();
@@ -320,7 +326,7 @@ void drawModelFaces(
 		shader->lightVector = Vec3(0, 0, 1);
 		shaderPtr = std::move(shader);
 	}
-	else {
+	else if constexpr (usedShader == 3) {
 		if (normalMap != nullptr) {
 			auto shader = std::make_unique<NormalMapShader>();
 			shader->transform = transform;
@@ -328,6 +334,33 @@ void drawModelFaces(
 			shader->lightVector = Vec3(0, 0, 1);
 			shader->texture = TextureSampler(texture);
 			shader->normalMap = TextureSampler(*normalMap);
+			shaderPtr = std::move(shader);
+		}
+		else {
+			auto shader = std::make_unique<SimpleLightShader>();
+			shader->transform = transform;
+			shader->normalsTransform = normalsTransform;
+			shader->lightVector = Vec3(0, 0, 1);
+			shader->texture = TextureSampler(texture);
+			shaderPtr = std::move(shader);
+		}
+	}
+	else {
+		if (normalMap != nullptr) {
+			auto shader = std::make_unique<PhongReflectionShader>();
+			shader->transform = transform;
+			shader->normalsTransform = normalsTransform;
+			shader->lightVector = Vec3(0, 0, 1);
+//			shader->lightVector = Vec3(1, 0, 0);
+//			shader->lightVector = Vec3(1.f, 0.5f, 1.f).normalized();
+			shader->lightColor = Vec3(1.f, 1.f, 1.f);
+			shader->specularPowerMultiplier = 20.f;
+			shader->ambientIntensity = 0.2f;
+			shader->diffuseRatio = 0.8f;
+			shader->specularRatio = 1.f - shader->diffuseRatio;
+			shader->diffuseColorMap = TextureSampler(texture);
+			shader->normalMap = TextureSampler(*normalMap);
+			shader->specularMap = TextureSampler(*specularMap);
 			shaderPtr = std::move(shader);
 		}
 		else {
