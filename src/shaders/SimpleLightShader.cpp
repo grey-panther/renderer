@@ -35,9 +35,7 @@ std::pair<bool, Vec4> SimpleLightShader::computeFragment(const VertexData& fragm
 	const Vec4 textureColor = texture.get(fragmentData.textureCoords);
 
 	// Shade the color according to the calculated light intensity.
-	const auto r = textureColor.x * lightIntensity;
-	const auto g = textureColor.y * lightIntensity;
-	const auto b = textureColor.z * lightIntensity;
+	const Vec3 rgb = textureColor.rgb() * lightIntensity;
 
-	return {true, Vec4(r, g, b, 1.f)};
+	return {true, Vec4(rgb, textureColor.a)};
 }

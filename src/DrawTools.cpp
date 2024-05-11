@@ -493,10 +493,10 @@ void drawTriangle(
 			if (needDraw) {
 				TGAColor tgaColor;
 				// Convert normalized 0-1 color channels to 0-255 byte channels.
-				tgaColor.r = static_cast<unsigned char>(std::clamp(std::round(color.x * 255), 0.f, 255.f));
-				tgaColor.g = static_cast<unsigned char>(std::clamp(std::round(color.y * 255), 0.f, 255.f));
-				tgaColor.b = static_cast<unsigned char>(std::clamp(std::round(color.z * 255), 0.f, 255.f));
-				tgaColor.a = static_cast<unsigned char>(std::clamp(std::round(color.w * 255), 0.f, 255.f));
+				tgaColor.r = static_cast<unsigned char>(std::clamp(std::round(color.r * 255), 0.f, 255.f));
+				tgaColor.g = static_cast<unsigned char>(std::clamp(std::round(color.g * 255), 0.f, 255.f));
+				tgaColor.b = static_cast<unsigned char>(std::clamp(std::round(color.b * 255), 0.f, 255.f));
+				tgaColor.a = static_cast<unsigned char>(std::clamp(std::round(color.a * 255), 0.f, 255.f));
 
 				outImage.set(x, y, tgaColor);
 				zBuffer[pixelIndex] = z;

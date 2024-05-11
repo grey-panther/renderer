@@ -63,9 +63,20 @@ public:
 	static float dotMultiply(const Vec3& a, const Vec3& b);
 
 public:
-	float x = 0.f;
-	float y = 0.f;
-	float z = 0.f;
+	union {
+		float x = 0.f;
+		float r;
+	};
+
+	union {
+		float y = 0.f;
+		float g;
+	};
+
+	union {
+		float z = 0.f;
+		float b;
+	};
 };
 
 Vec3 operator+(const Vec3& v1, const Vec3& v2);

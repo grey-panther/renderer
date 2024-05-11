@@ -4,6 +4,23 @@
 #include "Vec3.hpp"
 
 
+Vec4::Vec4(float scalar)
+		: x(scalar)
+		, y(scalar)
+		, z(scalar)
+		, w(scalar)
+{
+}
+
+
+Vec4::Vec4(float x, float y, float z, float w)
+		: x(x)
+		, y(y)
+		, z(z)
+		, w(w)
+{
+}
+
 Vec4::Vec4(const Vec3& v, float w)
 		: x(v.x)
 		, y(v.y)
@@ -66,6 +83,12 @@ Vec4& Vec4::operator-=(const Vec4& other)
 Vec3 Vec4::xyz() const
 {
 	return Vec3(x, y, z);
+}
+
+
+Vec3 Vec4::rgb() const
+{
+	return Vec3(r, g, b);
 }
 
 

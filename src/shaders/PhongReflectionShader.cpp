@@ -18,7 +18,7 @@ VertexData PhongReflectionShader::computeVertex(const VertexData& inVertexData) 
 std::pair<bool, Vec4> PhongReflectionShader::computeFragment(const VertexData& fragmentData) const
 {
 	// Get normal vector with its components in [0, 1]. The pixel format is RGB, so don't consider Alpha.
-	const Vec3 modelNormalRgb = normalMap.get(fragmentData.textureCoords).xyz();
+	const Vec3 modelNormalRgb = normalMap.get(fragmentData.textureCoords).rgb();
 	// Transform components from [0, 1] to [-1, 1].
 	const Vec3 modelNormal = modelNormalRgb * 2 - Vec3(1);
 	// Transform the normal vector from model space to clip space.
@@ -39,9 +39,9 @@ std::pair<bool, Vec4> PhongReflectionShader::computeFragment(const VertexData& f
 	const float specularPower = specularMap.get(fragmentData.textureCoords).x * specularPowerMultiplier;
 	const float specularIntensity = std::pow(std::max(0.f, reflViewCos), specularPower);
 
-	const Vec3 diffuseColor = diffuseColorMap.get(fragmentData.textureCoords).xyz();
+	const Vec4 diffuseColor = diffuseColorMap.get(fragmentData.textureCoords);
 	const Vec3 resultColor =
-			(ambientIntensity + diffuseRatio * diffuseIntensity) * diffuseColor
+			(ambientIntensity + diffuseRatio * diffuseIntensity) * diffuseColor.rgb()
 			+ (specularRatio * specularIntensity) * lightColor;
-	return {true, Vec4(resultColor, 1.f)};
+	return {true, Vec4(resultColor, diffuseColor.a)};
 }

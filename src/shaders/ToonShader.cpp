@@ -47,9 +47,7 @@ std::pair<bool, Vec4> ToonShader::computeFragment(const VertexData& fragmentData
 	const Vec4 baseColor = Vec4(0.f, 1.f, 0.f, 1.f);
 
 	// Shade the color according to the calculated light intensity.
-	const auto r = baseColor.x * light;
-	const auto g = baseColor.y * light;
-	const auto b = baseColor.z * light;
+	const Vec3 rgb = baseColor.rgb() * light;
 
-	return {true, Vec4(r, g, b, 1.f)};
+	return {true, Vec4(rgb, baseColor.a)};
 }

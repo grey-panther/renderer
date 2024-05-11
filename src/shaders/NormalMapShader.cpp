@@ -18,7 +18,7 @@ VertexData NormalMapShader::computeVertex(const VertexData& inVertexData) const
 std::pair<bool, Vec4> NormalMapShader::computeFragment(const VertexData& fragmentData) const
 {
 	// Get normal vector with its components in [0, 1]. The pixel format is RGB, so don't consider Alpha.
-	const Vec3 modelNormalRgb = normalMap.get(fragmentData.textureCoords).xyz();
+	const Vec3 modelNormalRgb = normalMap.get(fragmentData.textureCoords).rgb();
 	// Transform components from [0, 1] to [-1, 1].
 	const Vec3 modelNormal = modelNormalRgb * 2 - Vec3(1);
 	// Transform the normal vector from model space to clip space.
@@ -35,9 +35,7 @@ std::pair<bool, Vec4> NormalMapShader::computeFragment(const VertexData& fragmen
 	const Vec4 diffuseColor = texture.get(fragmentData.textureCoords);
 
 	// Shade the color according to the calculated light intensity.
-	const auto r = diffuseColor.x * lightIntensity;
-	const auto g = diffuseColor.y * lightIntensity;
-	const auto b = diffuseColor.z * lightIntensity;
+	const Vec3 rgb = diffuseColor.rgb() * lightIntensity;
 
-	return {true, Vec4(r, g, b, 1.f)};
+	return {true, Vec4(rgb, diffuseColor.a)};
 }

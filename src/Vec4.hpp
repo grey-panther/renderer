@@ -6,18 +6,11 @@
 struct Vec4
 {
 public:
-	float x = 0.f;
-	float y = 0.f;
-	float z = 0.f;
-	float w = 0.f;
+	Vec4() = default;
 
-public:
-	explicit Vec4(float x = 0, float y = 0, float z = 0, float w = 0)
-			: x(x)
-			, y(y)
-			, z(z)
-			, w(w)
-	{}
+	explicit Vec4(float scalar);
+
+	Vec4(float x, float y, float z, float w);
 
 	Vec4(const Vec3& vec3, float w);
 
@@ -33,6 +26,30 @@ public:
 
 	[[nodiscard]]
 	Vec3 xyz() const;
+
+	[[nodiscard]]
+	Vec3 rgb() const;
+
+public:
+	union {
+		float x = 0.f;
+		float r;
+	};
+
+	union {
+		float y = 0.f;
+		float g;
+	};
+
+	union {
+		float z = 0.f;
+		float b;
+	};
+
+	union {
+		float w = 0.f;
+		float a;
+	};
 };
 
 Vec4 operator+(const Vec4& v1, const Vec4& v2);
