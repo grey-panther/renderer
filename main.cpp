@@ -346,7 +346,7 @@ void drawModelFaces(
 		}
 	}
 	else {
-		if (normalMap != nullptr) {
+		if (normalMap != nullptr && specularMap != nullptr) {
 			auto shader = std::make_unique<PhongReflectionShader>();
 			shader->transform = transform;
 			shader->normalsTransform = normalsTransform;
