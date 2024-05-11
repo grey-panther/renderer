@@ -61,6 +61,7 @@ int main()
 	floorTexture.flip_vertically();
 
 	// Load head model
+	std::cout << "Load head" << std::endl;
 	const ObjFormatModel headModel("../assets/african_head.obj");
 	TGAImage headTexture(1024, 1024, TGAImage::RGB);
 	headTexture.read_tga_file("../assets/african_head_diffuse.tga");
@@ -73,10 +74,21 @@ int main()
 	headSpecularMap.flip_vertically();
 
 	// Inner eyes.
+	std::cout << "Load inner eyes" << std::endl;
 	const ObjFormatModel eyeInnerModel("../assets/african_head_eye_inner.obj");
 	TGAImage eyeInnerTexture(256, 256, TGAImage::RGB);
 	eyeInnerTexture.read_tga_file("../assets/african_head_eye_inner_diffuse.tga");
 	eyeInnerTexture.flip_vertically();
+
+	// Outer eyes.
+	std::cout << "Load outer eyes" << std::endl;
+	const ObjFormatModel eyeOuterModel("../assets/african_head_eye_outer.obj");
+	TGAImage eyeOuterTexture(64, 64, TGAImage::RGBA);
+	eyeOuterTexture.read_tga_file("../assets/african_head_eye_outer_diffuse.tga");
+	eyeOuterTexture.flip_vertically();
+	TGAImage eyeOuterNormalMap(256, 256, TGAImage::RGB);
+	eyeOuterNormalMap.read_tga_file("../assets/african_head_eye_outer_nm.tga");
+	eyeOuterNormalMap.flip_vertically();
 
 	// Init output image
 	const int OUTPUT_IMAGE_WIDTH = 1920;
@@ -108,6 +120,7 @@ int main()
 	const Mat4 headTransform = viewProjViewportMatrix * getHeadModelTransformMatrix();
 	drawModelFaces(headModel, headTexture, &headNormalMap, &headSpecularMap, headTransform, outputImage, zBuffer);
 	drawModelFaces(eyeInnerModel, eyeInnerTexture, nullptr, nullptr, headTransform, outputImage, zBuffer);
+	drawModelFaces(eyeOuterModel, eyeOuterTexture, &eyeOuterNormalMap, nullptr, headTransform, outputImage, zBuffer);
 
 	/*
 	// Draw wired head.

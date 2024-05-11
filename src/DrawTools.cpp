@@ -489,8 +489,19 @@ void drawTriangle(
 					+ vertices[1].textureCoords * barycentricPos.y
 					+ vertices[2].textureCoords * barycentricPos.z;
 
-			const auto& [needDraw, color] = shader.computeFragment(fragmentData);
+			const auto& [needDraw, srcColor] = shader.computeFragment(fragmentData);
 			if (needDraw) {
+				// Alpha blending.
+				// RGB_res = RGB_src * A_src + RGB_dst * (1 - A_src)
+				// A_res = A_src * (1 - A_dst) + A_dst * 1
+				TGAColor tgaDstColor = outImage.get(x, y);
+				const Vec4 dstColor {tgaDstColor.r / 255.f, tgaDstColor.g / 255.f, tgaDstColor.b / 255.f, tgaDstColor.a / 255.f};
+				Vec4 color;
+				color.r = std::min(1.f, srcColor.r * srcColor.a + dstColor.r * (1.f - srcColor.a));
+				color.g = std::min(1.f, srcColor.g * srcColor.a + dstColor.g * (1.f - srcColor.a));
+				color.b = std::min(1.f, srcColor.b * srcColor.a + dstColor.b * (1.f - srcColor.a));
+				color.a = std::min(1.f, srcColor.a * (1 - dstColor.a) + dstColor.a);
+
 				TGAColor tgaColor;
 				// Convert normalized 0-1 color channels to 0-255 byte channels.
 				tgaColor.r = static_cast<unsigned char>(std::clamp(std::round(color.r * 255), 0.f, 255.f));
