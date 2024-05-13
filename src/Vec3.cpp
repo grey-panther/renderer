@@ -59,6 +59,10 @@ Vec3& Vec3::operator-=(const Vec3& other)
 	return *this;
 }
 
+Vec3 Vec3::operator-() const
+{
+	return {-x, -y, -z};
+}
 
 Vec3& Vec3::normalize()
 {

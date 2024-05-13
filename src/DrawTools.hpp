@@ -76,3 +76,10 @@ std::tuple<Vec3, bool> calculateBarycentricCoordinates(
 	const Vec2i& pointC,
 	const Vec2i& pointP
 );
+
+[[nodiscard]]
+Mat4 calculateViewMatrix(
+		const Vec3& cameraPos,
+		const Vec3& lookAtPos,
+		const Vec3& worldUpDirection
+);

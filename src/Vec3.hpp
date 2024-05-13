@@ -39,6 +39,9 @@ public:
 
 	Vec3& operator-=(const Vec3& other);
 
+	[[nodiscard]]
+	Vec3 operator-() const;
+
 	Vec3& normalize();
 
 	[[nodiscard]]

@@ -504,3 +504,24 @@ void drawTriangle(
 		}
 	}
 }
+
+Mat4 calculateViewMatrix(
+		const Vec3& cameraPos,
+		const Vec3& lookAtPos,
+		const Vec3& worldUpDirection
+)
+{
+	// The right-handed coordinate system is used.
+	// i, j, k - basis vectors of new coordinate system (view space).
+	const Vec3 k = (cameraPos - lookAtPos).normalized();
+	const Vec3 i = (Vec3::crossMultiply(worldUpDirection, k)).normalized();
+	const Vec3 j = (Vec3::crossMultiply(k, i)).normalized();
+
+	// Mat4 matrix has row-major order.
+	Mat4 m = Mat4::identity();
+	m[0][0] = i.x;	m[0][1] = i.y;	m[0][2] = i.z;	m[0][3] = Vec3::dotMultiply(i, -cameraPos);	// The first row.
+	m[1][0] = j.x;	m[1][1] = j.y;	m[1][2] = j.z;	m[1][3] = Vec3::dotMultiply(j, -cameraPos);	// The second row.
+	m[2][0] = k.x;	m[2][1] = k.y;	m[2][2] = k.z;	m[2][3] = Vec3::dotMultiply(k, -cameraPos);	// The third row.
+
+	return m;
+}

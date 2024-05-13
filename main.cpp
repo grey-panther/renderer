@@ -21,6 +21,7 @@ static const TGAColor WHITE_COLOR = TGAColor(255, 255, 255, 255);
 static const TGAColor RED_COLOR = TGAColor(255, 0, 0, 255);
 static const TGAColor GREEN_COLOR = TGAColor(0, 255, 0, 255);
 static const TGAColor BLUE_COLOR = TGAColor(0, 0, 255, 255);
+static const Vec3 WORLD_UP_DIRECTION {0.f, 1.f, 0.f};
 
 void drawPlayground(TGAImage& image);
 
@@ -43,8 +44,6 @@ Mat4 getViewportMatrix(int width, int height);
 Mat4 getAxesViewportMatrix(int width, int height);
 
 Mat4 getProjectionMatrix();
-
-Mat4 getViewMatrix();
 
 Mat4 getHeadModelTransformMatrix();
 
@@ -87,7 +86,7 @@ int main()
 
 	const Mat4 viewportMatrix = getViewportMatrix(outputImage.get_width(), outputImage.get_height());
 	const Mat4 projectionMatrix = getProjectionMatrix();
-	const Mat4 viewMatrix = getViewMatrix();
+	const Mat4 viewMatrix = calculateViewMatrix(Vec3(0, 1, 4), Vec3(0), WORLD_UP_DIRECTION);
 	const Mat4 viewProjViewportMatrix = viewportMatrix * projectionMatrix * viewMatrix;
 
 	ZBuffer zBuffer = makeZBuffer(outputImage);
@@ -224,18 +223,6 @@ Mat4 getAxesViewportMatrix(int width, int height)
 }
 
 
-Mat4 getViewMatrix()
-{
-	const Mat4 viewRotationX = Transform::makeRotationX(PI / 8); // PI / 8;
-	const Mat4 viewRotationY = Transform::makeRotationY(0.f); // -PI / 4;
-	const Mat4 viewScale = Transform::makeScale(0.35f);
-	const Mat4 viewTranslation = Transform::makeTranslation(Vec3(0.f, 0.0f, -0.3f));
-
-	const Mat4 viewMatrix = viewTranslation * viewScale * viewRotationX * viewRotationY;
-	return viewMatrix;
-}
-
-
 Mat4 getHeadModelTransformMatrix()
 {
 	const Mat4 rotationMatrixX = Transform::makeRotationX(0);
@@ -263,7 +250,7 @@ Mat4 getProjectionMatrix()
 	// Применить искажение координат, чтобы создать центральную проекцию.
 	// Камера в точке (0, 0, cameraDistance) и смотрит на плоскость z = 0 (плоскость проекции).
 	// Чем больше cameraDistance, тем больше изображение похоже на параллельную проекцию.
-	static float cameraDistance = 1.5f;
+	static float cameraDistance = 3.f;
 	static Mat4 projectionMatrix{
 			1, 0, 0, 0,
 			0, 1, 0, 0,
