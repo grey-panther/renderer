@@ -22,6 +22,10 @@ static const TGAColor RED_COLOR = TGAColor(255, 0, 0, 255);
 static const TGAColor GREEN_COLOR = TGAColor(0, 255, 0, 255);
 static const TGAColor BLUE_COLOR = TGAColor(0, 0, 255, 255);
 static const Vec3 WORLD_UP_DIRECTION {0.f, 1.f, 0.f};
+static const Vec3 WORLD_CENTER {0.f, 0.f, 0.f};
+//static const Vec3 LIGHT_WORLD_POS {0.f, 0.f, 1.f};
+//static const Vec3 LIGHT_WORLD_POS {1.f, 0.f, 0.f};
+static const Vec3 LIGHT_WORLD_POS {1.f, 0.5f, 1.f};
 
 void drawPlayground(TGAImage& image);
 
@@ -31,10 +35,7 @@ void drawModelEdges(TGAImage& image, const ObjFormatModel& model, const Mat4& tr
 
 void drawModelFaces(
 		const ObjFormatModel& model,
-		const TGAImage& texture,
-		const TGAImage* normalMap,
-		const TGAImage* specularMap,
-		const Mat4& transform,
+		const IShader& shader,
 		TGAImage& outImage,
 		ZBuffer& zBuffer
 );
@@ -86,32 +87,118 @@ int main()
 
 	const Mat4 viewportMatrix = getViewportMatrix(outputImage.get_width(), outputImage.get_height());
 	const Mat4 projectionMatrix = getProjectionMatrix();
-	const Mat4 viewMatrix = calculateViewMatrix(Vec3(0, 1, 4), Vec3(0), WORLD_UP_DIRECTION);
+	const Mat4 viewMatrix = calculateViewMatrix(Vec3(0, 1, 4), WORLD_CENTER, WORLD_UP_DIRECTION);
 	const Mat4 viewProjViewportMatrix = viewportMatrix * projectionMatrix * viewMatrix;
 
 	ZBuffer zBuffer = makeZBuffer(outputImage);
 
-	/*
 	// Draw two crossed planes.
-	const Mat4 plane1Transform = viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationX(PI / 2);
-	drawModelFaces(floorModel, floorTexture, nullptr, plane1Transform, outputImage, zBuffer);
-	const Mat4 plane2Transform = viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationZ(PI / 2);
-	drawModelFaces(floorModel, floorTexture, nullptr, plane2Transform, outputImage, zBuffer);
-	 */
+	if (false) {
+		SimpleLightShader shader;
+		shader.lightVector = (LIGHT_WORLD_POS - WORLD_CENTER).normalize();
+		shader.texture = TextureSampler(floorTexture);
+
+		const Mat4 plane1Transform =
+				viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationX(PI / 2);
+		shader.transform = plane1Transform;
+		shader.normalsTransform = calculateNormalsTransform(plane1Transform);
+		drawModelFaces(floorModel, shader, outputImage, zBuffer);
+
+		const Mat4 plane2Transform =
+				viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationZ(PI / 2);
+		shader.transform = plane2Transform;
+		shader.normalsTransform = calculateNormalsTransform(plane2Transform);
+		drawModelFaces(floorModel, shader, outputImage, zBuffer);
+	}
 
 	// Draw horizontal floor.
-	const Mat4 floorTransform = viewProjViewportMatrix * getHeadModelTransformMatrix() * Transform::makeTranslation({0.f, -1.f, 0.f});
-	drawModelFaces(floorModel, floorTexture, nullptr, nullptr, floorTransform, outputImage, zBuffer);
+	{
+		const Mat4 floorTransform =
+				viewProjViewportMatrix * Transform::makeTranslation({0.f, -2.f, 0.f}) * Transform::makeScale(2.f);
+		SimpleLightShader shader;
+		shader.lightVector = (LIGHT_WORLD_POS - WORLD_CENTER).normalize();
+		shader.texture = TextureSampler(floorTexture);
+		shader.transform = floorTransform;
+		shader.normalsTransform = calculateNormalsTransform(floorTransform);
+		drawModelFaces(floorModel, shader, outputImage, zBuffer);
+	}
 
-	// Draw head.
+	// Draw main head model.
 	const Mat4 headTransform = viewProjViewportMatrix * getHeadModelTransformMatrix();
-	drawModelFaces(headModel, headTexture, &headNormalMap, &headSpecularMap, headTransform, outputImage, zBuffer);
-	drawModelFaces(eyeInnerModel, eyeInnerTexture, nullptr, nullptr, headTransform, outputImage, zBuffer);
+	{
+		const Mat4 normalsTransform = calculateNormalsTransform(headTransform);
+		const Vec3 toLightVector = (LIGHT_WORLD_POS - WORLD_CENTER).normalize();
 
-	/*
-	// Draw wired head.
-	drawModelEdges(outputImage, headModel, headTransform);
-	 */
+		// Initialize a shader.
+		constexpr int usedShader = 4;
+		std::unique_ptr<IShader> shaderPtr;
+		if constexpr (usedShader == 0) {
+			auto shader = std::make_unique<SimpleLightShader>();
+			shader->transform = headTransform;
+			shader->normalsTransform = normalsTransform;
+			shader->lightVector = toLightVector;
+			shader->texture = TextureSampler(headTexture);
+			shaderPtr = std::move(shader);
+		}
+		else if constexpr (usedShader == 1) {
+			auto shader = std::make_unique<MonochromeShader>();
+			shader->transform = headTransform;
+			shader->normalsTransform = normalsTransform;
+			shader->lightVector = toLightVector;
+			shaderPtr = std::move(shader);
+		}
+		else if constexpr (usedShader == 2) {
+			auto shader = std::make_unique<ToonShader>();
+			shader->transform = headTransform;
+			shader->normalsTransform = normalsTransform;
+			shader->lightVector = toLightVector;
+			shaderPtr = std::move(shader);
+		}
+		else if constexpr (usedShader == 3) {
+			auto shader = std::make_unique<NormalMapShader>();
+			shader->transform = headTransform;
+			shader->normalsTransform = normalsTransform;
+			shader->lightVector = toLightVector;
+			shader->texture = TextureSampler(headTexture);
+			shader->normalMap = TextureSampler(headNormalMap);
+			shaderPtr = std::move(shader);
+		}
+		else {
+			auto shader = std::make_unique<PhongReflectionShader>();
+			shader->transform = headTransform;
+			shader->normalsTransform = normalsTransform;
+			shader->lightVector = toLightVector;
+			shader->lightColor = Vec3(1.f, 1.f, 1.f);
+			shader->specularPowerMultiplier = 20.f;
+			shader->ambientIntensity = 0.2f;
+			shader->diffuseRatio = 0.8f;
+			shader->specularRatio = 1.f - shader->diffuseRatio;
+			shader->diffuseColorMap = TextureSampler(headTexture);
+			shader->normalMap = TextureSampler(headNormalMap);
+			shader->specularMap = TextureSampler(headSpecularMap);
+			shaderPtr = std::move(shader);
+		}
+
+		assertTrueMsg(shaderPtr != nullptr, "Shader must be set before rendering.");
+		if (shaderPtr) {
+			drawModelFaces(headModel, *shaderPtr, outputImage, zBuffer);
+		}
+
+		// Draw wired head.
+		if (false) {
+			drawModelEdges(outputImage, headModel, headTransform);
+		}
+	}
+
+	// Draw head eyes
+	{
+		SimpleLightShader shader;
+		shader.lightVector = (LIGHT_WORLD_POS - WORLD_CENTER).normalize();
+		shader.texture = TextureSampler(eyeInnerTexture);
+		shader.transform = headTransform;
+		shader.normalsTransform = calculateNormalsTransform(headTransform);
+		drawModelFaces(eyeInnerModel, shader, outputImage, zBuffer);
+	}
 
 	// Draw basic axes.
 	const Mat4 axesViewportMatrix = getAxesViewportMatrix(outputImage.get_width(), outputImage.get_height());
@@ -264,10 +351,7 @@ Mat4 getProjectionMatrix()
 
 void drawModelFaces(
 		const ObjFormatModel& model,
-		const TGAImage& texture,
-		const TGAImage* normalMap,
-		const TGAImage* specularMap,
-		const Mat4& transform,
+		const IShader& shader,
 		TGAImage& outImage,
 		ZBuffer& zBuffer
 )
@@ -281,88 +365,6 @@ void drawModelFaces(
 	const std::vector<Vec3>& modelTextureCoordinates = model.getTextureCoords();
 	const std::vector<Vec3>& modelNormals = model.getNormals();
 	assertFalse(modelNormals.empty());
-
-	// When we use only affine transformations (without perspective distortions),
-	// we can transform normals multiplying them by the transformMatrix as we do with vertex positions.
-	// It works because the inverse is equal to the transpose, and the transposed inverse of matrix M is M itself.
-	// Otherwise, we must multiply transform normals by the transposed inverse of transformMatrix.
-	const Mat4 normalsTransform = transform.getInverse().getTransposed();
-
-	// Initialize a shader.
-	constexpr int usedShader = 4;
-	std::unique_ptr<IShader> shaderPtr;
-	if constexpr (usedShader == 0) {
-		auto shader = std::make_unique<SimpleLightShader>();
-		shader->transform = transform;
-		shader->normalsTransform = normalsTransform;
-		shader->lightVector = Vec3(0, 0, 1);
-		shader->texture = TextureSampler(texture);
-		shaderPtr = std::move(shader);
-	}
-	else if constexpr (usedShader == 1) {
-		auto shader = std::make_unique<MonochromeShader>();
-		shader->transform = transform;
-		shader->normalsTransform = normalsTransform;
-		shader->lightVector = Vec3(0, 0, 1);
-		shaderPtr = std::move(shader);
-	}
-	else if constexpr (usedShader == 2) {
-		auto shader = std::make_unique<ToonShader>();
-		shader->transform = transform;
-		shader->normalsTransform = normalsTransform;
-		shader->lightVector = Vec3(0, 0, 1);
-		shaderPtr = std::move(shader);
-	}
-	else if constexpr (usedShader == 3) {
-		if (normalMap != nullptr) {
-			auto shader = std::make_unique<NormalMapShader>();
-			shader->transform = transform;
-			shader->normalsTransform = normalsTransform;
-			shader->lightVector = Vec3(0, 0, 1);
-			shader->texture = TextureSampler(texture);
-			shader->normalMap = TextureSampler(*normalMap);
-			shaderPtr = std::move(shader);
-		}
-		else {
-			auto shader = std::make_unique<SimpleLightShader>();
-			shader->transform = transform;
-			shader->normalsTransform = normalsTransform;
-			shader->lightVector = Vec3(0, 0, 1);
-			shader->texture = TextureSampler(texture);
-			shaderPtr = std::move(shader);
-		}
-	}
-	else {
-		if (normalMap != nullptr && specularMap != nullptr) {
-			auto shader = std::make_unique<PhongReflectionShader>();
-			shader->transform = transform;
-			shader->normalsTransform = normalsTransform;
-			shader->lightVector = Vec3(0, 0, 1);
-//			shader->lightVector = Vec3(1, 0, 0);
-//			shader->lightVector = Vec3(1.f, 0.5f, 1.f).normalized();
-			shader->lightColor = Vec3(1.f, 1.f, 1.f);
-			shader->specularPowerMultiplier = 20.f;
-			shader->ambientIntensity = 0.2f;
-			shader->diffuseRatio = 0.8f;
-			shader->specularRatio = 1.f - shader->diffuseRatio;
-			shader->diffuseColorMap = TextureSampler(texture);
-			shader->normalMap = TextureSampler(*normalMap);
-			shader->specularMap = TextureSampler(*specularMap);
-			shaderPtr = std::move(shader);
-		}
-		else {
-			auto shader = std::make_unique<SimpleLightShader>();
-			shader->transform = transform;
-			shader->normalsTransform = normalsTransform;
-			shader->lightVector = Vec3(0, 0, 1);
-			shader->texture = TextureSampler(texture);
-			shaderPtr = std::move(shader);
-		}
-	}
-	assertTrueMsg(shaderPtr != nullptr, "Shader must be set before rendering.");
-	if (!shaderPtr) {
-		return;
-	}
 
 	for (const ModelFace& face : modelFaces) {
 		const ModelFace::Indices& posIndices = face.getCoordsIndices();
@@ -385,7 +387,7 @@ void drawModelFaces(
 
 		drawTriangle(
 				inVertexArray,
-				*shaderPtr,
+				shader,
 				zBuffer,
 				outImage
 		);

@@ -505,6 +505,7 @@ void drawTriangle(
 	}
 }
 
+
 Mat4 calculateViewMatrix(
 		const Vec3& cameraPos,
 		const Vec3& lookAtPos,
@@ -524,4 +525,15 @@ Mat4 calculateViewMatrix(
 	m[2][0] = k.x;	m[2][1] = k.y;	m[2][2] = k.z;	m[2][3] = Vec3::dotMultiply(k, -cameraPos);	// The third row.
 
 	return m;
+}
+
+
+Mat4 calculateNormalsTransform(const Mat4& transform)
+{
+	// When we use only affine transformations (without perspective distortions),
+	// we can transform normals multiplying them by the transformMatrix as we do with vertex positions.
+	// It works because the inverse is equal to the transpose, and the transposed inverse of matrix M is M itself.
+	// Otherwise, we must multiply transform normals by the transposed inverse of transformMatrix.
+	const Mat4 normalsTransform = transform.getInverse().getTransposed();
+	return normalsTransform;
 }

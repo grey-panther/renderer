@@ -83,3 +83,6 @@ Mat4 calculateViewMatrix(
 		const Vec3& lookAtPos,
 		const Vec3& worldUpDirection
 );
+
+[[nodiscard]]
+Mat4 calculateNormalsTransform(const Mat4& transform);
