@@ -20,6 +20,13 @@ void ObjFormatModel::initializeFromFile(const std::string& inputFilePath)
 	while (getline(file, inputString)) {
 		// See the full standard of Wavefront .obj definition here:
 		// https://en.wikipedia.org/wiki/Wavefront_.obj_file
+
+		// Cut the comment if any.
+		const auto commentStartPos = inputString.find('#');
+		if (commentStartPos != std::string::npos) {
+			inputString.resize(commentStartPos);
+		}
+
 		const std::vector<std::string> elements = splitString(inputString, ' ', true);
 		const size_t size = elements.size();
 

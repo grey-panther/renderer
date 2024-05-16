@@ -64,6 +64,12 @@ int main()
 	floorTexture.read_tga_file("../assets/floor_diffuse.tga");
 	floorTexture.flip_vertically();
 
+	// Load cube model
+	const ObjFormatModel cubeModel("../assets/cube.obj");
+	TGAImage bricksDiffuseMap(1024, 1024, TGAImage::RGB);
+	bricksDiffuseMap.read_tga_file("../assets/bricks_diffuse.tga");
+	bricksDiffuseMap.flip_vertically();
+
 	// Load head model
 	const ObjFormatModel headModel("../assets/african_head.obj");
 	TGAImage headTexture(1024, 1024, TGAImage::RGB);
@@ -125,8 +131,37 @@ int main()
 		drawModelFaces(floorModel, shader, outputImage, zBuffer);
 	}
 
+	// Draw a cube.
+	if (true) {
+		const Mat4 cubeLocalTransform = Transform::makeScale(1.0f) * Transform::makeRotationY(0);
+		const Mat4 cubeTransform = viewProjViewportMatrix * cubeLocalTransform;
+		const Mat4 cubeNormalsTransform = calculateNormalsTransform(viewMatrix * cubeLocalTransform);
+		SimpleLightShader shader;
+		shader.transform = cubeTransform;
+		shader.normalsTransform = cubeNormalsTransform;
+		shader.lightVector = toLightViewSpaceDirection;
+		shader.texture = TextureSampler(bricksDiffuseMap);
+		drawModelFaces(cubeModel, shader, outputImage, zBuffer);
+
+		// Draw normal vector for the right cube face
+		if (false) {
+			const Vec4 cubeLocalNormal {1, 0, 0, 0};
+			const Vec3 cubeViewNormal = (cubeNormalsTransform * cubeLocalNormal).xyz().normalize();
+			const Vec4 cubeRightFaceCenter {1.f, 0.f, 0.f, 1.f};
+			Vec4 startNormalPos = cubeTransform * cubeRightFaceCenter;
+			startNormalPos /= startNormalPos.w;
+			const Vec3 endNormalPos = startNormalPos.xyz() + (cubeViewNormal * 100);
+			drawLine(
+					Vec2(startNormalPos.x, startNormalPos.y).rounded(),
+					Vec2(endNormalPos.x, endNormalPos.y).rounded(),
+					outputImage,
+					VIOLET_COLOR
+			);
+		}
+	}
+
 	// Draw main head model.
-	constexpr bool needDrawHead = true;
+	constexpr bool needDrawHead = false;
 	const Mat4 headTransform = viewProjViewportMatrix * getHeadModelTransformMatrix();
 	const Mat4 headNormalsTransform = calculateNormalsTransform(viewMatrix * getHeadModelTransformMatrix());
 	if (needDrawHead) {
