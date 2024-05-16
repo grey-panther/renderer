@@ -21,11 +21,15 @@ static const TGAColor WHITE_COLOR = TGAColor(255, 255, 255, 255);
 static const TGAColor RED_COLOR = TGAColor(255, 0, 0, 255);
 static const TGAColor GREEN_COLOR = TGAColor(0, 255, 0, 255);
 static const TGAColor BLUE_COLOR = TGAColor(0, 0, 255, 255);
+static const TGAColor YELLOW_COLOR = TGAColor(255, 255, 0, 255);
+static const TGAColor VIOLET_COLOR = TGAColor(255, 0, 255, 255);
+static const TGAColor CYAN_COLOR = TGAColor(0, 255, 255, 255);
 static const Vec3 WORLD_UP_DIRECTION {0.f, 1.f, 0.f};
 static const Vec3 WORLD_CENTER {0.f, 0.f, 0.f};
-//static const Vec3 LIGHT_WORLD_POS {0.f, 0.f, 1.f};
-//static const Vec3 LIGHT_WORLD_POS {1.f, 0.f, 0.f};
-static const Vec3 LIGHT_WORLD_POS {1.f, 0.5f, 1.f};
+
+static const Vec3 LIGHT_WORLD_POS {1.f, 2.f, 1.f};
+
+static const Vec3 CAMERA_WORLD_POS {1.f, 1.f, 2.f};
 
 void drawPlayground(TGAImage& image);
 
@@ -87,47 +91,46 @@ int main()
 
 	const Mat4 viewportMatrix = getViewportMatrix(outputImage.get_width(), outputImage.get_height());
 	const Mat4 projectionMatrix = getProjectionMatrix();
-	const Mat4 viewMatrix = calculateViewMatrix(Vec3(0, 1, 4), WORLD_CENTER, WORLD_UP_DIRECTION);
+	const Mat4 viewMatrix = calculateViewMatrix(CAMERA_WORLD_POS, WORLD_CENTER, WORLD_UP_DIRECTION);
 	const Mat4 viewProjViewportMatrix = viewportMatrix * projectionMatrix * viewMatrix;
+	const Vec3 toLightViewSpaceDirection = (calculateNormalsTransform(viewMatrix) * Vec4((LIGHT_WORLD_POS - WORLD_CENTER), 0.f)).xyz().normalize();
 
 	ZBuffer zBuffer = makeZBuffer(outputImage);
 
 	// Draw two crossed planes.
 	if (false) {
 		SimpleLightShader shader;
-		shader.lightVector = (LIGHT_WORLD_POS - WORLD_CENTER).normalize();
+		shader.lightVector = toLightViewSpaceDirection;
 		shader.texture = TextureSampler(floorTexture);
 
-		const Mat4 plane1Transform =
-				viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationX(PI / 2);
-		shader.transform = plane1Transform;
-		shader.normalsTransform = calculateNormalsTransform(plane1Transform);
+		const Mat4 plane1Transform = Transform::makeRotationY(PI / 6) * Transform::makeRotationX(PI / 2);
+		shader.transform = viewProjViewportMatrix * plane1Transform;
+		shader.normalsTransform = calculateNormalsTransform(viewMatrix * plane1Transform);
 		drawModelFaces(floorModel, shader, outputImage, zBuffer);
 
-		const Mat4 plane2Transform =
-				viewProjViewportMatrix * Transform::makeRotationY(PI / 6) * Transform::makeRotationZ(PI / 2);
-		shader.transform = plane2Transform;
-		shader.normalsTransform = calculateNormalsTransform(plane2Transform);
+		const Mat4 plane2Transform = Transform::makeRotationY(PI / 6) * Transform::makeRotationZ(PI / 2);
+		shader.transform = viewProjViewportMatrix * plane2Transform;
+		shader.normalsTransform = calculateNormalsTransform(viewMatrix * plane2Transform);
 		drawModelFaces(floorModel, shader, outputImage, zBuffer);
 	}
 
 	// Draw horizontal floor.
 	{
-		const Mat4 floorTransform =
-				viewProjViewportMatrix * Transform::makeTranslation({0.f, -2.f, 0.f}) * Transform::makeScale(2.f);
+		const Mat4 floorTransform = Transform::makeTranslation({0.f, -2.f, 0.f}) * Transform::makeScale(2.f);
 		SimpleLightShader shader;
-		shader.lightVector = (LIGHT_WORLD_POS - WORLD_CENTER).normalize();
+		shader.lightVector = toLightViewSpaceDirection;
 		shader.texture = TextureSampler(floorTexture);
-		shader.transform = floorTransform;
-		shader.normalsTransform = calculateNormalsTransform(floorTransform);
+		shader.transform = viewProjViewportMatrix * floorTransform;
+		shader.normalsTransform = calculateNormalsTransform(viewMatrix * floorTransform);
 		drawModelFaces(floorModel, shader, outputImage, zBuffer);
 	}
 
 	// Draw main head model.
+	constexpr bool needDrawHead = true;
 	const Mat4 headTransform = viewProjViewportMatrix * getHeadModelTransformMatrix();
-	{
-		const Mat4 normalsTransform = calculateNormalsTransform(headTransform);
-		const Vec3 toLightVector = (LIGHT_WORLD_POS - WORLD_CENTER).normalize();
+	const Mat4 headNormalsTransform = calculateNormalsTransform(viewMatrix * getHeadModelTransformMatrix());
+	if (needDrawHead) {
+		const Vec3& toLightVector = toLightViewSpaceDirection;
 
 		// Initialize a shader.
 		constexpr int usedShader = 4;
@@ -135,7 +138,7 @@ int main()
 		if constexpr (usedShader == 0) {
 			auto shader = std::make_unique<SimpleLightShader>();
 			shader->transform = headTransform;
-			shader->normalsTransform = normalsTransform;
+			shader->normalsTransform = headNormalsTransform;
 			shader->lightVector = toLightVector;
 			shader->texture = TextureSampler(headTexture);
 			shaderPtr = std::move(shader);
@@ -143,21 +146,21 @@ int main()
 		else if constexpr (usedShader == 1) {
 			auto shader = std::make_unique<MonochromeShader>();
 			shader->transform = headTransform;
-			shader->normalsTransform = normalsTransform;
+			shader->normalsTransform = headNormalsTransform;
 			shader->lightVector = toLightVector;
 			shaderPtr = std::move(shader);
 		}
 		else if constexpr (usedShader == 2) {
 			auto shader = std::make_unique<ToonShader>();
 			shader->transform = headTransform;
-			shader->normalsTransform = normalsTransform;
+			shader->normalsTransform = headNormalsTransform;
 			shader->lightVector = toLightVector;
 			shaderPtr = std::move(shader);
 		}
 		else if constexpr (usedShader == 3) {
 			auto shader = std::make_unique<NormalMapShader>();
 			shader->transform = headTransform;
-			shader->normalsTransform = normalsTransform;
+			shader->normalsTransform = headNormalsTransform;
 			shader->lightVector = toLightVector;
 			shader->texture = TextureSampler(headTexture);
 			shader->normalMap = TextureSampler(headNormalMap);
@@ -166,7 +169,7 @@ int main()
 		else {
 			auto shader = std::make_unique<PhongReflectionShader>();
 			shader->transform = headTransform;
-			shader->normalsTransform = normalsTransform;
+			shader->normalsTransform = headNormalsTransform;
 			shader->lightVector = toLightVector;
 			shader->lightColor = Vec3(1.f, 1.f, 1.f);
 			shader->specularPowerMultiplier = 20.f;
@@ -191,13 +194,26 @@ int main()
 	}
 
 	// Draw head eyes
-	{
+	if (needDrawHead) {
 		SimpleLightShader shader;
-		shader.lightVector = (LIGHT_WORLD_POS - WORLD_CENTER).normalize();
+		shader.lightVector = toLightViewSpaceDirection;
 		shader.texture = TextureSampler(eyeInnerTexture);
 		shader.transform = headTransform;
-		shader.normalsTransform = calculateNormalsTransform(headTransform);
+		shader.normalsTransform = headNormalsTransform;
 		drawModelFaces(eyeInnerModel, shader, outputImage, zBuffer);
+	}
+
+	// Draw light vector
+	{
+		Vec4 startLightPos = viewProjViewportMatrix * Vec4(WORLD_CENTER, 1.f);
+		startLightPos /= startLightPos.w;
+		const Vec3 endLightPos = startLightPos.xyz() + (toLightViewSpaceDirection * 100);
+		drawLine(
+				Vec2(startLightPos.x, startLightPos.y).rounded(),
+				Vec2(endLightPos.x, endLightPos.y).rounded(),
+				outputImage,
+				YELLOW_COLOR
+		);
 	}
 
 	// Draw basic axes.
@@ -337,7 +353,7 @@ Mat4 getProjectionMatrix()
 	// Применить искажение координат, чтобы создать центральную проекцию.
 	// Камера в точке (0, 0, cameraDistance) и смотрит на плоскость z = 0 (плоскость проекции).
 	// Чем больше cameraDistance, тем больше изображение похоже на параллельную проекцию.
-	static float cameraDistance = 3.f;
+	static float cameraDistance = 1.5f;
 	static Mat4 projectionMatrix{
 			1, 0, 0, 0,
 			0, 1, 0, 0,
